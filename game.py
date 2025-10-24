@@ -82,6 +82,7 @@ class Hand:
         self.player: Player | Dealer = player
         self.bet = bet
         self.result = None
+        self.to_resolve = True
 
     @property
     def value(self):
@@ -122,37 +123,31 @@ class Hand:
 
 class Player:
 
-    def __init__(self, id, hands_played = 1):
+    def __init__(self, id, hands_played = 1, strategy = strat.BASIC_STRAT):
         self.id = id
-        self.strategy = None
-        self.balance: float = None
+        self.strategy = strategy
+        self.balance: float = 0
         self.hands_played: int = hands_played
         self.hands: list[Hand] = [] 
 
-    def place_bet():
-        ...
+    def place_bet(self):
+        return 1
 
     def determine_action(self, hand: Hand, dealer_upcard):
 
         # we need value of hand and check if ace or pair
-        hand_type = None
-
         if hand.is_pair(): 
-            return strat.BASIC_STRAT["pair"][hand.cards[0].value][dealer_upcard]
+            return self.strategy["pair"][hand.cards[0].value][dealer_upcard]
         elif hand.is_soft():
-            return strat.BASIC_STRAT["soft"][hand.value][dealer_upcard]
+            return self.strategy["soft"][hand.value][dealer_upcard]
         else:
-            if hand.value >= 17:
-                return "stand"
-            if hand.value <= 8:
-                return "hit"
-            return strat.BASIC_STRAT["hard"][hand.value][dealer_upcard]
+            return self.strategy["hard"][hand.value][dealer_upcard]
 
     
 
 class Dealer:
 
-    def __init__(self, hit_soft_17: bool = True):
+    def __init__(self, hit_soft_17: bool = False):
         self.hand: Hand = None
         self.id = 999
         self.balance = 0
@@ -185,13 +180,8 @@ class Game:
         total_player_hands = self.init_hands()
         hands_to_resolve = self.playout_hands(total_player_hands)
 
-
-        time.sleep(3)
-        # check first if there is an open hand left
-
         if hands_to_resolve:
             self.playout_dealer_hand()
-
             self.resolve_hands(total_player_hands, self.dealer.hand.value)
 
         print([hand.result for hand in total_player_hands])
@@ -200,10 +190,9 @@ class Game:
 
     def playout_dealer_hand(self):
 
-        print("Playing dealer hand...")
-        print(str(self.dealer.hand))
-        time.sleep(3)
-        while self.dealer.hand.value <= 17:
+        print("Playing dealer hand...", str(self.dealer.hand))
+
+        while self.dealer.hand.value < 17:
             self.dealer.hand.add_card(self.shoe)
             print(str(self.dealer.hand))
 
@@ -219,16 +208,14 @@ class Game:
 
     def init_hands(self):
         
-        total_player_hands = [(hand_no, player) for player in self.players for hand_no in range(player.hands_played)] # list of all hands in the round represented by Player object
         total_hands = [] # list of all Hand objects in the round
 
-        # init hands for players and add 1 card to each hand
-        for hand_no, player_hand in total_player_hands:
-            hand = Hand(player_hand, 1)
-            player_hand.hands.append(hand)  
-            player_hand.hands[hand_no].add_card(self.shoe)
-            total_hands.append(hand)
-
+        for player in self.players:
+            for hand in range(player.hands_played):
+                hand = Hand(player, player.place_bet())
+                hand.add_card(self.shoe)
+                player.hands.append(hand)
+                total_hands.append(hand)
 
         # init dealer hand and add 1 card
         self.dealer.hand = Hand(self.dealer, 0)
@@ -236,9 +223,8 @@ class Game:
         print("Dealer upcard:", str(self.dealer.hand))
 
         # add second card to each hand
-        for hand_no, player_hand in total_player_hands:
-            player_hand.hands[hand_no].add_card(self.shoe)
-
+        for hand in total_hands:
+            hand.add_card(self.shoe)
 
         # add second card to dealer hand
         self.dealer.hand.add_card(self.shoe)
@@ -251,17 +237,17 @@ class Game:
         # one of the split cards is removed from current hand and added to new hand
 
         new_hand = Hand(hand.player, hand.bet)
-        
         card = hand.cards.pop()
-        hand_index = total_hands.index(hand)
-
         new_hand.cards.append(card) 
+
+        hand_index = total_hands.index(hand)
 
         # Special case: split aces -> only one more card
         if card.rank == "A":
             new_hand.add_card(self.shoe)
             hand.add_card(self.shoe)
-            total_hands.remove(hand)
+            new_hand.to_resolve = False
+            hand.to_resolve = False
         else:
             total_hands.insert(hand_index + 1, new_hand)
         #split_count += 1
@@ -274,15 +260,16 @@ class Game:
 
         for hand in total_hands:
 
-            print("Playing hand:", str(hand), "...")
-            time.sleep(3)
+            print("\nPlaying hand:", str(hand), "...")
 
-            while True:
+            while hand.to_resolve:
+
                 if hand.is_blackjack():
                     print("Blackjack")
                     hand.result = "Blackjack"
                     hands_to_resolve = True
                     break
+
                 if hand.is_bust():
                     print("Bust")
                     hand.result = "Bust"
@@ -296,11 +283,11 @@ class Game:
                     case "stand" :
                         print("Stand")
                         hands_to_resolve = True
-                        break
+                        hand.to_resolve = False
+
                     case "hit":
                         hand.add_card(self.shoe)
                         print("Hit:", str(hand))
-                        time.sleep(2)
 
                     case "double":
 
@@ -319,37 +306,30 @@ class Game:
                             else:
                                 hands_to_resolve = True
 
-                            break
+                            hand.to_resolve = False
 
                     case "split":
                         print("Split")
-                        # new split hand has to be created and inserted into the hands queue
-                    
                         self.split(hand, total_hands)
-
-                        
-
 
         return hands_to_resolve
                     
-                    
-
 
     def resolve_hands(self, hands: list[Hand], dealer_hand_value):
-        
 
         for hand in hands:
+            
             if hand.result is None:
-                if hand.value > dealer_hand_value | dealer_hand_value > 21:
+                if hand.value > dealer_hand_value or dealer_hand_value > 21:
                     hand.result = "Win" 
-                elif 21 >= hand.value == dealer_hand_value:
+                elif hand.value == dealer_hand_value:
                     hand.result = "Push" 
                 else:
                     hand.result = "Loss"
-                
-                
+                        
             elif hand.result == "Blackjack" and dealer_hand_value == 21:
                 hand.result = "Push"
+            print(f"Player's {hand.value} vs. dealer's {dealer_hand_value}: {hand.result}")
                 
 
     def update_balances(self, hands: list[Hand]):
@@ -374,22 +354,21 @@ class Game:
                 case _:
                     continue
 
-            
-    
-
-
 
     def start(self):
 
-        for _ in range(self.rounds):
-            self.init_hands
+        for i in range(self.rounds):
+            print(" ")
+            print(f"Playing round {i+1}")
+            print("-----------------------------------", end = "\n\n")
+            self.play_round()
 
 
 if __name__ == "__main__":
 
     game = Game(
-        1, 1, 2
+        1, 3, 2
     )
 
 
-    game.play_round()
+    game.start()
