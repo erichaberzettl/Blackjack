@@ -1,5 +1,5 @@
 import numpy as np
-import random, strategies as strat, time
+import random, strategies as strat, time, csv
 from collections import deque
 
 
@@ -83,6 +83,7 @@ class Hand:
         self.bet = bet
         self.result = None
         self.to_resolve = True
+        self.actions = ""
 
     @property
     def value(self):
@@ -172,20 +173,25 @@ class Game:
         self.shoe.shuffle()
         self.rounds = rounds
         self.blackjack_payout = blackjack_pays
-        round_data = []
+        self.round_data = []
+        self.hand_data = []
+
 
     def play_round(self):
         # init hands, playout hands, check if hands left, play dealer hand, resolve hands
         print("Initializing hands...")
-        total_player_hands = self.init_hands()
-        hands_to_resolve = self.playout_hands(total_player_hands)
+        total_hands = self.init_hands()
+        hands_to_resolve = self.playout_hands(total_hands)
 
         if hands_to_resolve:
             self.playout_dealer_hand()
-            self.resolve_hands(total_player_hands, self.dealer.hand.value)
+            self.resolve_hands(total_hands, self.dealer.hand.value)
 
-        print([hand.result for hand in total_player_hands])
+        print([hand.result for hand in total_hands])
 
+        total_hands.append(self.dealer.hand) # append dealer hand for data log
+
+        self.hand_data.append(total_hands)
             
 
     def playout_dealer_hand(self):
@@ -242,14 +248,19 @@ class Game:
 
         hand_index = total_hands.index(hand)
 
-        # Special case: split aces -> only one more card
+        new_hand.add_card(self.shoe)
+        hand.add_card(self.shoe)
+
+        total_hands.insert(hand_index + 1, new_hand)
+
+        # Special case: split aces -> only one more card and check if Blackjack to set hand.result
         if card.rank == "A":
-            new_hand.add_card(self.shoe)
-            hand.add_card(self.shoe)
+            if new_hand.is_blackjack():
+                new_hand.result = "Blackjack"
+            if hand.is_blackjack():
+                hand.result = "Blackjack"
             new_hand.to_resolve = False
             hand.to_resolve = False
-        else:
-            total_hands.insert(hand_index + 1, new_hand)
         #split_count += 1
 
     
@@ -281,24 +292,29 @@ class Game:
 
                 match action:
                     case "stand" :
-                        print("Stand")
+                        print("Stand:", str(hand))
                         hands_to_resolve = True
                         hand.to_resolve = False
+                        hand.actions += "S" 
 
                     case "hit":
-                        hand.add_card(self.shoe)
                         print("Hit:", str(hand))
+                        hand.add_card(self.shoe)
+                        hand.actions += "H" 
+
 
                     case "double":
 
                         if len(hand.cards) != 2:
                             hand.add_card(self.shoe)
                             print("Hit (double not possible):", str(hand))
+                            hand.actions += "H"
                             
                         else:
+                            print("Double:", str(hand))
                             hand.add_card(self.shoe)
                             hand.bet *= 2
-                            print("Double:", str(hand))
+                            hand.actions += "D"
                             
                             if hand.is_bust():
                                 print("Bust")
@@ -309,8 +325,10 @@ class Game:
                             hand.to_resolve = False
 
                     case "split":
-                        print("Split")
+                        print("Split:", str(hand))
                         self.split(hand, total_hands)
+                        hand.actions += "P"
+                        hands_to_resolve = True
 
         return hands_to_resolve
                     
@@ -363,12 +381,32 @@ class Game:
             print("-----------------------------------", end = "\n\n")
             self.play_round()
 
+    def export_as_csv(self):
+        # create csv with column names
+        # append the data for each round accordingly
+        # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
+
+        with open("hand_log.csv", "w", newline= "") as file:
+            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_value", "hand_result", "actions", "bet", "profit/loss"]
+
+            csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
+            csv_writer.writeheader()
+
+            for index, round_hands in enumerate(self.hand_data, start = 1):
+                for hand in round_hands[:-1]:
+                    csv_writer.writerow({"round_id": index, "player_id": hand.player.id, "dealer_upcard": round_hands[-1].cards[0].value, "dealer_hand_value": round_hands[-1].value,
+                                          "hand_value": hand.value, "hand_result": hand.result, "actions": hand.actions, 
+                                          "bet": hand.bet, "profit/loss": f"{hand.cards[0].value}, {hand.cards[1].value}"})
+                
+
+
 
 if __name__ == "__main__":
 
     game = Game(
-        1, 3, 2
+        3, 1, 10000
     )
 
 
     game.start()
+    game.export_as_csv()
