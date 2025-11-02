@@ -82,8 +82,10 @@ class Hand:
         self.player: Player | Dealer = player
         self.bet = bet
         self.result = None
+        self.profit = 0
         self.to_resolve = True
         self.actions = ""
+
 
     @property
     def value(self):
@@ -173,7 +175,7 @@ class Game:
         self.shoe.shuffle()
         self.rounds = rounds
         self.blackjack_payout = blackjack_pays
-        self.round_data = []
+        self.game_data = []
         self.hand_data = []
 
 
@@ -186,6 +188,7 @@ class Game:
         if hands_to_resolve:
             self.playout_dealer_hand()
             self.resolve_hands(total_hands, self.dealer.hand.value)
+            self.update_balances(total_hands)
 
         print([hand.result for hand in total_hands])
 
@@ -357,21 +360,26 @@ class Game:
 
             match hand.result:
                 case "Blackjack":
-                    hand.player.balance += hand.player.bet * self.blackjack_payout
-                    self.dealer.balance -= hand.player.bet * self.blackjack_payout
+                    hand.player.balance += hand.bet * self.blackjack_payout
+                    self.dealer.balance -= hand.bet * self.blackjack_payout
+                    hand.profit = hand.bet * self.blackjack_payout
                 
                 case "Win":
-                    hand.player.balance += hand.player.bet 
-                    self.dealer.balance -= hand.player.bet 
+                    hand.player.balance += hand.bet 
+                    self.dealer.balance -= hand.bet 
+                    hand.profit = hand.bet
 
 
                 case "Bust" | "Loss":
-                    hand.player.balance -= hand.player.bet
-                    self.dealer.balance += hand.player.bet 
+                    hand.player.balance -= hand.bet
+                    self.dealer.balance += hand.bet 
+                    hand.profit = - hand.bet
 
                 case _:
                     continue
 
+                
+                
 
     def start(self):
 
@@ -387,7 +395,7 @@ class Game:
         # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
 
         with open("hand_log.csv", "w", newline= "") as file:
-            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_value", "hand_result", "actions", "bet", "profit/loss"]
+            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_value", "hand_result", "actions", "cards", "bet", "profit/loss", "balance"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -395,17 +403,32 @@ class Game:
             for index, round_hands in enumerate(self.hand_data, start = 1):
                 for hand in round_hands[:-1]:
                     csv_writer.writerow({"round_id": index, "player_id": hand.player.id, "dealer_upcard": round_hands[-1].cards[0].value, "dealer_hand_value": round_hands[-1].value,
-                                          "hand_value": hand.value, "hand_result": hand.result, "actions": hand.actions, 
-                                          "bet": hand.bet, "profit/loss": f"{hand.cards[0].value}, {hand.cards[1].value}"})
+                                          "hand_value": hand.value, "hand_result": hand.result, "actions": hand.actions, "cards": [card.rank for card in hand.cards],
+                                          "bet": hand.bet, "profit/loss": hand.profit})
                 
+            # basic game info: num of players, hands per player, num of rounds
+
+        with open("player_log.csv", "w", newline= "") as file:
+            fieldnames = ["player_id", "hands_played", "strategy", "final_balance"]
+
+            csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
+            csv_writer.writeheader()
+
+            for player in self.players:
+                csv_writer.writerow({"player_id": player.id, 
+                                     "hands_played": player.hands_played, 
+                                     "strategy": player.strategy["name"], 
+                                     "final_balance": player.balance})
+                    
 
 
-
-if __name__ == "__main__":
+def main():
 
     game = Game(
-        3, 1, 10000
+        2, 1, 10000
     )
+
+    game.players[1].strategy = strat.NO_BUST_STRAT
 
 
     game.start()
