@@ -55,7 +55,6 @@ class Deck:
         list = [str(card) for card in self.cards]
         return str(list)
 
- 
 class Shoe: 
 
     def __init__(self, penetration_level: float = 0.8, decks: int = 4):
@@ -63,10 +62,12 @@ class Shoe:
         self.decks = decks if 1 <= decks <= 8 else 4
         self.cards = [card for i in range(decks) for card in Deck().cards]
         self.next_card_index = -1
+        self.shuffles = 0
         
     def shuffle(self):
         random.shuffle(self.cards)
         self.next_card_index = -1
+        self.shuffles += 1
 
     def deal(self):
         self.next_card_index += 1
@@ -175,7 +176,7 @@ class Game:
         self.shoe.shuffle()
         self.rounds = rounds
         self.blackjack_payout = blackjack_pays
-        self.game_data = []
+        self.dealer_rule = "Hit all 17" if self.dealer.hit_soft_17 else "Stand on soft 17"
         self.hand_data = []
 
 
@@ -201,7 +202,7 @@ class Game:
 
         print("Playing dealer hand...", str(self.dealer.hand))
 
-        while self.dealer.hand.value < 17:
+        while self.dealer.hand.value < (18 if self.dealer.hit_soft_17 else 17):
             self.dealer.hand.add_card(self.shoe)
             print(str(self.dealer.hand))
 
@@ -213,7 +214,6 @@ class Game:
         self.players[0].hands = [split_hand]
 
         print("Reset Hand to 2-2:", str(self.players[0].hands[0]))
-
 
     def init_hands(self):
         
@@ -402,8 +402,11 @@ class Game:
 
             for index, round_hands in enumerate(self.hand_data, start = 1):
                 for hand in round_hands[:-1]:
-                    csv_writer.writerow({"round_id": index, "player_id": hand.player.id, "dealer_upcard": round_hands[-1].cards[0].value, "dealer_hand_value": round_hands[-1].value,
-                                          "hand_value": hand.value, "hand_result": hand.result, "actions": hand.actions, "cards": [card.rank for card in hand.cards],
+                    csv_writer.writerow({"round_id": index, "player_id": hand.player.id, 
+                                         "dealer_upcard": round_hands[-1].cards[0].value, 
+                                         "dealer_hand_value": round_hands[-1].value,
+                                          "hand_value": hand.value, "hand_result": hand.result, 
+                                          "actions": hand.actions, "cards": [card.rank for card in hand.cards],
                                           "bet": hand.bet, "profit/loss": hand.profit})
                 
             # basic game info: num of players, hands per player, num of rounds
@@ -419,17 +422,36 @@ class Game:
                                      "hands_played": player.hands_played, 
                                      "strategy": player.strategy["name"], 
                                      "final_balance": player.balance})
+                
+        with open("game_log.csv", "w", newline="") as file:
+            fieldnames = ["players", "rounds", "dealer_rule", "blackjack_pays", "decks", "penetration_rate", "dealer_balance", "shuffles"]
+
+            csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
+            csv_writer.writeheader()
+            csv_writer.writerow({"players": len(self.players), 
+                                 "rounds": self.rounds, 
+                                 "dealer_rule": self.dealer_rule, 
+                                 "blackjack_pays": self.blackjack_payout, 
+                                 "decks": self.shoe.decks, 
+                                 "penetration_rate": self.shoe.penetration_level,
+                                 "dealer_balance": self.dealer.balance,
+                                 "shuffles": self.shoe.shuffles})
                     
 
 
 def main():
 
     game = Game(
-        2, 1, 10000
+        3, 2, 10000
     )
 
     game.players[1].strategy = strat.NO_BUST_STRAT
 
 
+
     game.start()
     game.export_as_csv()
+
+
+if __name__ == "__main__":
+    main()
