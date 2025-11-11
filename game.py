@@ -174,8 +174,10 @@ class Dealer:
 
 class Game:
 
-    def __init__(self, player_no: int, hands_per_player: int, rounds: int, blackjack_pays = 1.5):
+    def __init__(self, player_no: int, hands_per_player: int, rounds: int, blackjack_pays = 1.5, seed = None):
         
+        self.seed = seed
+        random.seed(seed)
         self.players = [Player(i, hands_per_player) for i in range(player_no)]
         self.dealer = Dealer()
         self.shoe = Shoe()
@@ -401,7 +403,7 @@ class Game:
         # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
 
         with open("hand_log.csv", "w", newline= "") as file:
-            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value" "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss", "balance"]
+            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -432,7 +434,7 @@ class Game:
                                      "final_balance": player.balance})
                 
         with open("game_log.csv", "w", newline="") as file:
-            fieldnames = ["players", "rounds", "dealer_rule", "blackjack_pays", "decks", "penetration_rate", "dealer_balance", "shuffles"]
+            fieldnames = ["seed", "players", "rounds", "dealer_rule", "blackjack_pays", "decks", "penetration_rate", "dealer_balance", "shuffles"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -443,14 +445,15 @@ class Game:
                                  "decks": self.shoe.decks, 
                                  "penetration_rate": self.shoe.penetration_level,
                                  "dealer_balance": self.dealer.balance,
-                                 "shuffles": self.shoe.shuffles})
+                                 "shuffles": self.shoe.shuffles,
+                                 "seed": self.seed})
                     
 
 
 def main():
 
     game = Game(
-        3, 1, 100000,
+        3, 1, 1000,
     )
 
     game.shoe.auto_shuffle = False

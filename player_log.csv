@@ -1,4 +1,3 @@
 player_id,hands_played,bet_size,strategy,final_balance
-0,1,1,Basic Strategy,-400.5
-1,1,1,Basic Strategy,-49.0
-2,1,1,Basic Strategy,-361.0
+0,1,1,Basic Strategy,-319.5
+1,1,1,No Bust Strategy,-639.0

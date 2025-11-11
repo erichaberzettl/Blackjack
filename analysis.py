@@ -40,7 +40,8 @@ def analyze_player(df: pd.DataFrame):
     # number of doubles, splits
     print(f"Number of splits: {total_hands-total_rounds*hands_played}")
     # mean return per hand
-    print(f"Average return per hand (bet size): {df["profit/loss"].mean()} ({players_df.at[0, "bet_size"]})")
+    print(f"Average/mean return per hand (bet size): {df["profit/loss"].mean()} ({players_df.at[0, "bet_size"]})")
+    print(f"Standard deviation (sample): {df["profit/loss"].std()}")
 
     one_sample_ttest(i)
 
@@ -65,18 +66,12 @@ def one_sample_ttest(player_id):
     player_data = hands_df[hands_df["player_id"] == player_id]["profit/loss"]
 
 
-    #profit_df = player1["profit/loss"]
-
-    #mean = profit_df.mean()
-    #std = profit_df.std()
-    #print(profit_df.head())
-    #tvalue = (mean - 0)/(std/sqrt(profit_df.count()))
-
-
 
     results = stats.ttest_1samp(player_data, popmean=0)
-    
+    cohens_d = results.statistic / sqrt(player_data.size)
+    print(player_data.size, cohens_d)
     print(results)
+
     print(results.confidence_interval())
     print(results._estimate)
 
