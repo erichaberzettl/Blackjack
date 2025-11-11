@@ -57,7 +57,8 @@ class Deck:
 
 class Shoe: 
 
-    def __init__(self, penetration_level: float = 0.8, decks: int = 4):
+    def __init__(self, penetration_level: float = 0.8, decks: int = 4, auto_shuffle = True):
+        self.auto_shuffle = auto_shuffle
         self.penetration_level = penetration_level if 0.2 <= penetration_level <= 1 else 0.8
         self.decks = decks if 1 <= decks <= 8 else 4
         self.cards = [card for i in range(decks) for card in Deck().cards]
@@ -70,6 +71,10 @@ class Shoe:
         self.shuffles += 1
 
     def deal(self):
+
+        if self.auto_shuffle:
+            return random.choice(self.cards)
+        
         self.next_card_index += 1
         if self.next_card_index/(52*self.decks) >= self.penetration_level:
             self.shuffle()
@@ -127,15 +132,16 @@ class Hand:
 
 class Player:
 
-    def __init__(self, id, hands_played = 1, strategy = strat.BASIC_STRAT):
+    def __init__(self, id, hands_played = 1, strategy = strat.BASIC_STRAT, bet_size = 1):
         self.id = id
         self.strategy = strategy
         self.balance: float = 0
+        self.bet_size = bet_size
         self.hands_played: int = hands_played
         self.hands: list[Hand] = [] 
 
     def place_bet(self):
-        return 1
+        return 10
 
     def determine_action(self, hand: Hand, dealer_upcard):
 
@@ -221,7 +227,7 @@ class Game:
 
         for player in self.players:
             for hand in range(player.hands_played):
-                hand = Hand(player, player.place_bet())
+                hand = Hand(player, player.bet_size)
                 hand.add_card(self.shoe)
                 player.hands.append(hand)
                 total_hands.append(hand)
@@ -395,7 +401,7 @@ class Game:
         # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
 
         with open("hand_log.csv", "w", newline= "") as file:
-            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_value", "hand_result", "actions", "cards", "bet", "profit/loss", "balance"]
+            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value" "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss", "balance"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -405,14 +411,15 @@ class Game:
                     csv_writer.writerow({"round_id": index, "player_id": hand.player.id, 
                                          "dealer_upcard": round_hands[-1].cards[0].value, 
                                          "dealer_hand_value": round_hands[-1].value,
-                                          "hand_value": hand.value, "hand_result": hand.result, 
+                                         "hand_start_value": hand.cards[0].value + hand.cards[1].value,
+                                          "hand_final_value": hand.value, "hand_result": hand.result, 
                                           "actions": hand.actions, "cards": [card.rank for card in hand.cards],
                                           "bet": hand.bet, "profit/loss": hand.profit})
                 
             # basic game info: num of players, hands per player, num of rounds
 
         with open("player_log.csv", "w", newline= "") as file:
-            fieldnames = ["player_id", "hands_played", "strategy", "final_balance"]
+            fieldnames = ["player_id", "hands_played", "bet_size", "strategy", "final_balance"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -420,7 +427,8 @@ class Game:
             for player in self.players:
                 csv_writer.writerow({"player_id": player.id, 
                                      "hands_played": player.hands_played, 
-                                     "strategy": player.strategy["name"], 
+                                     "strategy": player.strategy["name"],
+                                     "bet_size": player.bet_size, 
                                      "final_balance": player.balance})
                 
         with open("game_log.csv", "w", newline="") as file:
@@ -442,11 +450,10 @@ class Game:
 def main():
 
     game = Game(
-        3, 2, 10000
+        3, 1, 100000,
     )
 
-    game.players[1].strategy = strat.NO_BUST_STRAT
-
+    game.shoe.auto_shuffle = False
 
 
     game.start()

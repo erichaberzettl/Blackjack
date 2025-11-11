@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import game
+from math import sqrt
+import scipy.stats as stats
 
 
 game.main()
@@ -19,12 +21,16 @@ game_df = pd.read_csv("game_log.csv")
 total_rounds = game_df["rounds"].iloc[0]
 def analyze_player(df: pd.DataFrame):
 
+    total_hands = len(df)
+    total_rounds = game_df["rounds"].iloc[0]
+    hands_played = players_df.at[i, "hands_played"]
+
     print("------------------------------------------------")
     print(f"Player {df.iloc[0]["player_id"]} performance:")
     print(f"Using strategy: {players_df.at[i, "strategy"]}")    
+    print(f"Playing {hands_played} hand(s) per round")
+
     
-    total_hands = len(df)
-    total_rounds = game_df["rounds"].iloc[0]
     print(f"Total rounds: {df.iloc[-1]["round_id"]}")
     print(f"Hands played: {total_hands}")
     # final balance
@@ -32,7 +38,12 @@ def analyze_player(df: pd.DataFrame):
     # number of wins (blackjacks), losses, pushs
     print(f"Number of wins (blackjacks): {df["hand_result"].isin(["Win", "Blackjack"]).sum()} ({len(df[df["hand_result"] == "Blackjack"])})")
     # number of doubles, splits
-    print(f"Number of splits: {total_hands-total_rounds}")
+    print(f"Number of splits: {total_hands-total_rounds*hands_played}")
+    # mean return per hand
+    print(f"Average return per hand (bet size): {df["profit/loss"].mean()} ({players_df.at[0, "bet_size"]})")
+
+    one_sample_ttest(i)
+
     
 def balance_plot():
     
@@ -49,10 +60,30 @@ def balance_plot():
 
     plt.show()
 
+def one_sample_ttest(player_id):
+
+    player_data = hands_df[hands_df["player_id"] == player_id]["profit/loss"]
+
+
+    #profit_df = player1["profit/loss"]
+
+    #mean = profit_df.mean()
+    #std = profit_df.std()
+    #print(profit_df.head())
+    #tvalue = (mean - 0)/(std/sqrt(profit_df.count()))
+
+
+
+    results = stats.ttest_1samp(player_data, popmean=0)
+    
+    print(results)
+    print(results.confidence_interval())
+    print(results._estimate)
+
+
 
 
 for i in hands_df["player_id"].unique():
-    print(i)
     analyze_player(hands_df[hands_df["player_id"] == i])
 
 balance_plot()
