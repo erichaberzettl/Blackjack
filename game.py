@@ -94,6 +94,16 @@ class Hand:
 
 
     @property
+    def start_value(self):
+        value = sum(card.value for card in self.cards[:2])
+        aces_no = sum(1 for card in self.cards if card.rank == "A")
+
+        if aces_no > 0 and value + 10 <= 21:
+            return value + 10
+
+        return value
+
+    @property
     def value(self):
         value = sum(card.value for card in self.cards)
         aces_no = sum(1 for card in self.cards if card.rank == "A")
@@ -403,7 +413,7 @@ class Game:
         # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
 
         with open("hand_log.csv", "w", newline= "") as file:
-            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"]
+            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss", "balance"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -413,7 +423,7 @@ class Game:
                     csv_writer.writerow({"round_id": index, "player_id": hand.player.id, 
                                          "dealer_upcard": round_hands[-1].cards[0].value, 
                                          "dealer_hand_value": round_hands[-1].value,
-                                         "hand_start_value": hand.cards[0].value + hand.cards[1].value,
+                                         "hand_start_value": hand.start_value,
                                           "hand_final_value": hand.value, "hand_result": hand.result, 
                                           "actions": hand.actions, "cards": [card.rank for card in hand.cards],
                                           "bet": hand.bet, "profit/loss": hand.profit})
