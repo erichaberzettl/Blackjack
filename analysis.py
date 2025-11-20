@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import game
 from math import sqrt
 import scipy.stats as stats
+from statsmodels.stats.proportion import proportions_ztest
 
 def analyze_player(df: pd.DataFrame):
 
@@ -49,19 +50,39 @@ def balance_plot():
     ax.legend(loc = "upper left")
     plt.show()
 
-def one_sample_ttest(player_id):
+def one_sample_ttest(df: pd.DataFrame):
 
-    player_data = hands_df[hands_df["player_id"] == player_id]["profit/loss"]
+    profit_data = df["profit/loss"]
 
-    results = stats.ttest_1samp(player_data, popmean=0)
-    cohens_d = results.statistic / sqrt(player_data.size)
-    print(f"Sample size: {player_data.size}")
+    results = stats.ttest_1samp(profit_data, popmean=0)
+    cohens_d = results.statistic / sqrt(profit_data.size)
+    print(f"Sample size: {profit_data.size}")
     print(f"Cohen's d: {cohens_d:.4f}")
     print(f"Sample estimate (SE): {results._estimate:.4f} ({results._standard_error:.4f})")
     print(f"T value: {results._statistic_np:.4f}")
     print(f"P value: {results.pvalue:.4f}")
     conf_interval = results.confidence_interval()
     print(f"95% Conf. Interval: [{conf_interval.low:.4f}, {conf_interval.high:.4f}]")
+
+def win_rate_proportion_test(df: pd.DataFrame):
+
+    number_of_successes = (df[df["hand_result"].isin(["Blackjack", "Win"])]
+                .hand_result
+                .size)
+    
+    print(number_of_successes)
+    
+    number_of_trials = df.hand_result.size
+    
+    print(number_of_trials)
+    win_rate =  number_of_successes / number_of_trials
+    
+    print(f"Win rate: {win_rate} vs. Null Hypothesis: 0.42")
+
+    stats, pvalue = proportions_ztest(count=number_of_successes, nobs=number_of_trials, value=0.42)
+
+    print(f"P value: {pvalue:.4f}")
+    print(f"Z statistic: {stats:.4f}")
 
 
 hands_df = pd.read_csv("hand_log.csv")
@@ -71,7 +92,9 @@ game_df = pd.read_csv("game_log.csv")
 total_rounds = game_df["rounds"].iloc[0]
 
 for i in hands_df["player_id"].unique():
-    analyze_player(hands_df[hands_df["player_id"] == i])
-    one_sample_ttest(i)
+    subset_df = hands_df[hands_df["player_id"] == i]
+    analyze_player(subset_df)
+    #one_sample_ttest(subset_df)
+    win_rate_proportion_test(subset_df)
 
 balance_plot()
