@@ -1,2 +1,2 @@
 seed,players,rounds,dealer_rule,blackjack_pays,decks,penetration_rate,dealer_balance,shuffles
-,4,1000,Stand on soft 17,1.5,4,0.8,-43.0,84
+,5,100,Stand on soft 17,1.5,4,0.8,-83.0,10

@@ -215,7 +215,8 @@ class Game:
         if hands_to_resolve:
             self.playout_dealer_hand()
             self.resolve_hands(total_hands, self.dealer.hand.value)
-            self.update_balances(total_hands)
+        
+        self.update_balances(total_hands)
 
         print([hand.result for hand in total_hands])
 
@@ -374,6 +375,7 @@ class Game:
                 if hand.is_bust():
                     print("Bust")
                     hand.result = "Bust"
+                    hand.to_resolve = False
                     break
 
                 action = hand.player.determine_action(hand, self.dealer.upcard.value)
@@ -453,6 +455,7 @@ class Game:
         for hand in hands: 
 
             match hand.result:
+                
                 case "Blackjack":
                     hand.player.balance += hand.bet * self.blackjack_payout
                     self.dealer.balance -= hand.bet * self.blackjack_payout
@@ -467,7 +470,7 @@ class Game:
                 case "Bust" | "Loss":
                     hand.player.balance -= hand.bet
                     self.dealer.balance += hand.bet 
-                    hand.profit = - hand.bet
+                    hand.profit -= hand.bet
 
                 case _:
                     continue
@@ -540,9 +543,9 @@ class Game:
 def main():
 
     game = Game(
-        4, 1, 1000,
+        5, 1, 100,
     )
-
+    #game.players[0].strategy = strat.NO_BUST_STRAT
     game.shoe.auto_shuffle = False
 
 

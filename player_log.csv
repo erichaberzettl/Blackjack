@@ -1,5 +1,6 @@
 player_id,hands_played,bet_size,strategy,final_balance
-0,1,1,Basic Strategy,-13.0
-1,1,1,Basic Strategy,65.5
-2,1,1,Basic Strategy,13.5
-3,1,1,Basic Strategy,-23.0
+0,1,1,Basic Strategy,21.5
+1,1,1,Basic Strategy,24.5
+2,1,1,Basic Strategy,1.0
+3,1,1,Basic Strategy,8.5
+4,1,1,Basic Strategy,27.5
