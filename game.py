@@ -147,8 +147,14 @@ class Player:
         self.strategy = strategy
         self.balance: float = 0
         self.bet_size = bet_size
+        self.split_count = 0
+        self.ace_split_count = 0
         self.hands_played: int = hands_played
         self.hands: list[Hand] = [] 
+
+    @property
+    def total_split_count(self):
+        return self.split_count + self.ace_split_count
 
     def place_bet(self):
         return 10
@@ -184,7 +190,7 @@ class Dealer:
 
 class Game:
 
-    def __init__(self, player_no: int, hands_per_player: int, rounds: int, blackjack_pays = 1.5, seed = None):
+    def __init__(self, player_no: int, hands_per_player: int, rounds: int, blackjack_pays = 1.5, ace_resplit = True, seed = None):
         
         self.seed = seed
         random.seed(seed)
@@ -194,6 +200,8 @@ class Game:
         self.shoe.shuffle()
         self.rounds = rounds
         self.blackjack_payout = blackjack_pays
+        self.allow_ace_resplit = ace_resplit
+        self.max_splits = 4
         self.dealer_rule = "Hit all 17" if self.dealer.hit_soft_17 else "Stand on soft 17"
         self.hand_data = []
 
@@ -215,6 +223,11 @@ class Game:
 
         self.hand_data.append(total_hands)
             
+    def new_round_reset(self):
+
+        for player in self.players:
+            player.split_count = 0
+            player.hands = []
 
     def playout_dealer_hand(self):
 
@@ -258,31 +271,87 @@ class Game:
 
         return total_hands
     
-    def split(self, hand: Hand, total_hands: list[Hand]):
+    def normal_split(self, hand: Hand, total_hands: list[Hand]):
         # assumes hand parameter is a splittable hand
         # creates a new Hand 
         # one of the split cards is removed from current hand and added to new hand
 
-        new_hand = Hand(hand.player, hand.bet)
-        card = hand.cards.pop()
-        new_hand.cards.append(card) 
+        if hand.player.total_split_count < self.max_splits:
 
-        hand_index = total_hands.index(hand)
+            hand.player.split_count += 1
+            hand.actions += "P"
 
-        new_hand.add_card(self.shoe)
-        hand.add_card(self.shoe)
+            new_hand = Hand(hand.player, hand.bet)
+            card = hand.cards.pop()
+            new_hand.cards.append(card) 
 
-        total_hands.insert(hand_index + 1, new_hand)
+            new_hand.add_card(self.shoe)
+            hand.add_card(self.shoe)
 
-        # Special case: split aces -> only one more card and check if Blackjack to set hand.result
-        if card.rank == "A":
+            hand_index = total_hands.index(hand)
+            total_hands.insert(hand_index + 1, new_hand)
+        else:
+            hand.to_resolve = False
+            # Force Stand
+            # TODO Determine action for hard hand
+
+
+    def ace_split(self, hand: Hand, total_hands: list[Hand]):
+        # 3 options: no allow resplit but no split yet, no allow resplit and already split, allow resplit
+        if not self.allow_ace_resplit:
+
+            if hand.player.ace_split_count > 0:
+                hand.to_resolve = False
+                return
+            
+            hand.player.ace_split_count += 1
+            hand.actions += "P"
+
+            new_hand = Hand(hand.player, hand.bet)
+            card = hand.cards.pop()
+            new_hand.cards.append(card) 
+
+            hand_index = total_hands.index(hand)
+
+            new_hand.add_card(self.shoe)
+            hand.add_card(self.shoe)
+
             if new_hand.is_blackjack():
-                new_hand.result = "Blackjack"
+                new_hand.result = "Win"
             if hand.is_blackjack():
-                hand.result = "Blackjack"
+                hand.result = "Win"
+
+            total_hands.insert(hand_index + 1, new_hand)
             new_hand.to_resolve = False
             hand.to_resolve = False
-        #split_count += 1
+
+        else:
+
+            if hand.player.total_split_count < self.max_splits:
+                hand.player.ace_split_count += 1
+                hand.actions += "P"
+
+                new_hand = Hand(hand.player, hand.bet)
+                card = hand.cards.pop()
+                new_hand.cards.append(card) 
+
+                new_hand.add_card(self.shoe)
+                hand.add_card(self.shoe)
+
+                hand_index = total_hands.index(hand)
+                total_hands.insert(hand_index + 1, new_hand)
+
+                if new_hand.is_blackjack():
+                    new_hand.result = "Win"
+                if hand.is_blackjack():
+                    hand.result = "Win"
+                if not new_hand.is_pair():
+                    new_hand.to_resolve = False
+                if not hand.is_pair():
+                    hand.to_resolve = False
+
+            else:
+                hand.to_resolve = False
 
     
     def playout_hands(self, total_hands: list[Hand]):
@@ -347,9 +416,16 @@ class Game:
 
                     case "split":
                         print("Split:", str(hand))
-                        self.split(hand, total_hands)
-                        hand.actions += "P"
-                        hands_to_resolve = True
+                        if not hand.is_pair():
+                            print("Hand is not a pair")
+                            hands_to_resolve = True
+                            hand.to_resolve = False
+                            hand.actions += "S" 
+                            break
+                        elif hand.is_pair() and hand.cards[0].rank == "A" and hand.cards[1].rank == "A":    
+                            self.ace_split(hand, total_hands)
+                        else:
+                            self.normal_split(hand, total_hands)
 
         return hands_to_resolve
                     
@@ -406,6 +482,7 @@ class Game:
             print(f"Playing round {i+1}")
             print("-----------------------------------", end = "\n\n")
             self.play_round()
+            self.new_round_reset()
 
     def export_as_csv(self):
         # create csv with column names
@@ -463,7 +540,7 @@ class Game:
 def main():
 
     game = Game(
-        3, 1, 1000,
+        4, 1, 1000,
     )
 
     game.shoe.auto_shuffle = False
