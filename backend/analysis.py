@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import game
+import backend.game as game
 from math import sqrt
 import scipy.stats as stats
 from statsmodels.stats.proportion import proportions_ztest

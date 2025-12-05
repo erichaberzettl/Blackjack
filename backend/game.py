@@ -1,7 +1,6 @@
 import numpy as np
-import random, strategies as strat, time, csv
-from collections import deque
-
+import random, backend.strategies as strat, time, csv, uuid
+from pathlib import Path
 
 class Card:
 
@@ -202,7 +201,7 @@ class Game:
         self.blackjack_payout = blackjack_pays
         self.allow_ace_resplit = ace_resplit
         self.max_splits = 4
-        self.dealer_rule = "Hit all 17" if self.dealer.hit_soft_17 else "Stand on soft 17"
+        self.dealer_rule = "H17" if self.dealer.hit_soft_17 else "S17"
         self.hand_data = []
 
 
@@ -487,13 +486,15 @@ class Game:
             self.play_round()
             self.new_round_reset()
 
-    def export_as_csv(self):
+    def export_as_csv(self, folder: str = None):
         # create csv with column names
         # append the data for each round accordingly
         # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
 
-        with open("hand_log.csv", "w", newline= "") as file:
-            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss", "balance"]
+        if not folder:
+            folder = " "
+        with open(f"{folder}/hand_log.csv", "w", newline= "") as file:
+            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -510,7 +511,7 @@ class Game:
                 
             # basic game info: num of players, hands per player, num of rounds
 
-        with open("player_log.csv", "w", newline= "") as file:
+        with open(f"{folder}/player_log.csv", "w", newline= "") as file:
             fieldnames = ["player_id", "hands_played", "bet_size", "strategy", "final_balance"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
@@ -523,7 +524,7 @@ class Game:
                                      "bet_size": player.bet_size, 
                                      "final_balance": player.balance})
                 
-        with open("game_log.csv", "w", newline="") as file:
+        with open(f"{folder}/game_log.csv", "w", newline="") as file:
             fieldnames = ["seed", "players", "rounds", "dealer_rule", "blackjack_pays", "decks", "penetration_rate", "dealer_balance", "shuffles"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
@@ -552,6 +553,16 @@ def main():
     game.start()
     game.export_as_csv()
 
+
+def run_simulation(game_config: Game):
+
+    game_config.start()
+    game_id = uuid.uuid1()
+    Path(f"../data_{game_id}").mkdir(exist_ok=True)
+    folder = f"data_{game_id}"
+    game_config.export_as_csv(folder)
+
+    return game_id
 
 if __name__ == "__main__":
     main()

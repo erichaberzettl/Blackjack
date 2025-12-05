@@ -1,5 +1,5 @@
-import game as g
-import strategies as strats
+import backend.game as g
+import backend.strategies as strats
 import scipy.stats as stats
 import statsmodels.stats.power as smp
 import pandas as pd
