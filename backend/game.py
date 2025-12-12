@@ -146,17 +146,14 @@ class Player:
         self.strategy = strategy
         self.balance: float = 0
         self.bet_size = bet_size
-        self.split_count = 0
+        self.normal_split_count = 0
         self.ace_split_count = 0
         self.hands_played: int = hands_played
         self.hands: list[Hand] = [] 
 
     @property
     def total_split_count(self):
-        return self.split_count + self.ace_split_count
-
-    def place_bet(self):
-        return 10
+        return self.normal_split_count + self.ace_split_count
 
     def determine_action(self, hand: Hand, dealer_upcard):
 
@@ -167,8 +164,6 @@ class Player:
             return self.strategy["soft"][hand.value][dealer_upcard]
         else:
             return self.strategy["hard"][hand.value][dealer_upcard]
-
-    
 
 class Dealer:
 
@@ -189,7 +184,7 @@ class Dealer:
 
 class Game:
 
-    def __init__(self, player_no: int, hands_per_player: int, rounds: int, blackjack_pays = 1.5, ace_resplit = True, seed = None):
+    def __init__(self, player_no: int = 1, hands_per_player: int = 1, rounds: int = 100, blackjack_pays = 1.5, ace_resplit = True, seed = None):
         
         self.seed = seed
         random.seed(seed)
@@ -226,7 +221,7 @@ class Game:
     def new_round_reset(self):
 
         for player in self.players:
-            player.split_count = 0
+            player.normal_split_count= 0
             player.hands = []
 
     def playout_dealer_hand(self):
@@ -278,7 +273,7 @@ class Game:
 
         if hand.player.total_split_count < self.max_splits:
 
-            hand.player.split_count += 1
+            hand.player.normal_split_count += 1
             hand.actions += "P"
 
             new_hand = Hand(hand.player, hand.bet)
@@ -486,15 +481,14 @@ class Game:
             self.play_round()
             self.new_round_reset()
 
-    def export_as_csv(self, folder: str = None):
+    def export_as_csv(self, id: str):
         # create csv with column names
         # append the data for each round accordingly
         # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
 
-        if not folder:
-            folder = " "
-        with open(f"{folder}/hand_log.csv", "w", newline= "") as file:
-            fieldnames = ["round_id", "hand_no", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"]
+        
+        with open(f"data/hand_log_{id}.csv", "w", newline= "") as file:
+            fieldnames = ["round_id", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"]
 
             csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
             csv_writer.writeheader()
@@ -511,34 +505,34 @@ class Game:
                 
             # basic game info: num of players, hands per player, num of rounds
 
-        with open(f"{folder}/player_log.csv", "w", newline= "") as file:
-            fieldnames = ["player_id", "hands_played", "bet_size", "strategy", "final_balance"]
+            with open(f"data/player_log_{id}.csv", "w", newline= "") as file:
+                fieldnames = ["player_id", "hands_played", "bet_size", "strategy", "final_balance"]
 
-            csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
-            csv_writer.writeheader()
+                csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
+                csv_writer.writeheader()
 
-            for player in self.players:
-                csv_writer.writerow({"player_id": player.id, 
-                                     "hands_played": player.hands_played, 
-                                     "strategy": player.strategy["name"],
-                                     "bet_size": player.bet_size, 
-                                     "final_balance": player.balance})
-                
-        with open(f"{folder}/game_log.csv", "w", newline="") as file:
-            fieldnames = ["seed", "players", "rounds", "dealer_rule", "blackjack_pays", "decks", "penetration_rate", "dealer_balance", "shuffles"]
-
-            csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
-            csv_writer.writeheader()
-            csv_writer.writerow({"players": len(self.players), 
-                                 "rounds": self.rounds, 
-                                 "dealer_rule": self.dealer_rule, 
-                                 "blackjack_pays": self.blackjack_payout, 
-                                 "decks": self.shoe.decks, 
-                                 "penetration_rate": self.shoe.penetration_level,
-                                 "dealer_balance": self.dealer.balance,
-                                 "shuffles": self.shoe.shuffles,
-                                 "seed": self.seed})
+                for player in self.players:
+                    csv_writer.writerow({"player_id": player.id, 
+                                        "hands_played": player.hands_played, 
+                                        "strategy": player.strategy["name"],
+                                        "bet_size": player.bet_size, 
+                                        "final_balance": player.balance})
                     
+            with open(f"data/game_log_{id}.csv", "w", newline="") as file:
+                fieldnames = ["seed", "players", "rounds", "dealer_rule", "blackjack_pays", "decks", "penetration_rate", "dealer_balance", "shuffles"]
+
+                csv_writer = csv.DictWriter(file, fieldnames = fieldnames, extrasaction = "ignore", restval = "")
+                csv_writer.writeheader()
+                csv_writer.writerow({"players": len(self.players), 
+                                    "rounds": self.rounds, 
+                                    "dealer_rule": self.dealer_rule, 
+                                    "blackjack_pays": self.blackjack_payout, 
+                                    "decks": self.shoe.decks, 
+                                    "penetration_rate": self.shoe.penetration_level,
+                                    "dealer_balance": self.dealer.balance,
+                                    "shuffles": self.shoe.shuffles,
+                                    "seed": self.seed})
+                        
 
 
 def main():
@@ -554,14 +548,13 @@ def main():
     game.export_as_csv()
 
 
+
 def run_simulation(game_config: Game):
 
     game_config.start()
-    game_id = uuid.uuid1()
-    Path(f"../data_{game_id}").mkdir(exist_ok=True)
-    folder = f"data_{game_id}"
-    game_config.export_as_csv(folder)
-
+    game_id = str(uuid.uuid1())
+    game_config.export_as_csv(game_id)
+    
     return game_id
 
 if __name__ == "__main__":
