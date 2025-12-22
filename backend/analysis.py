@@ -38,7 +38,7 @@ def analyze_player(i, df: pd.DataFrame):
     print(f"Average/mean return per hand (bet size): {df["profit/loss"].mean()} ({players_df.at[0, "bet_size"]})")
     analysis["mean_return"] = round(float(df["profit/loss"].mean()), 4)
     print(f"Standard deviation (sample): {df["profit/loss"].std()}")
-    analysis["std"] = df["profit/loss"].std()
+    analysis["std"] = df["profit/loss"].std(ddof=0)
     # starting hand value with most wins
     winner_starting_hand_value = df[df["hand_result"].isin(["Blackjack", "Win"])].groupby("hand_start_value").hand_result.size().nlargest(3).to_dict()
     analysis["winner_start_hand"] = winner_starting_hand_value
@@ -52,6 +52,9 @@ def analyze_player(i, df: pd.DataFrame):
     print(f"Best starting hand value (no of wins): {winner_starting_hand_value})")
 
     analysis["cumsum_profit"] = df["profit/loss"].cumsum().to_list()
+
+    analysis["return_test"] = one_sample_ttest(df)
+    analysis["winrate_test"] = win_rate_proportion_test(df)
 
     return analysis
 
@@ -92,6 +95,9 @@ def one_sample_ttest(df: pd.DataFrame):
     print(f"P value: {results.pvalue:.4f}")
     conf_interval = results.confidence_interval()
     print(f"95% Conf. Interval: [{conf_interval.low:.4f}, {conf_interval.high:.4f}]")
+    results
+    return [results, conf_interval]
+
 
 def win_rate_proportion_test(df: pd.DataFrame):
 
@@ -108,10 +114,12 @@ def win_rate_proportion_test(df: pd.DataFrame):
     
     print(f"Win rate: {win_rate} vs. Null Hypothesis: 0.42")
 
-    stats, pvalue = proportions_ztest(count=number_of_successes, nobs=number_of_trials, value=0.42)
+    zstat, pvalue = proportions_ztest(count=number_of_successes, nobs=number_of_trials, value=0.42)
 
     print(f"P value: {pvalue:.4f}")
-    print(f"Z statistic: {stats:.4f}")
+    print(f"Z statistic: {zstat:.4f}")
+
+    return {"zstat": zstat, "pvalue": pvalue}
 
 def main(game_id: str):
     global hands_df, players_df, game_df, total_rounds
@@ -127,8 +135,6 @@ def main(game_id: str):
         subset_df = hands_df[hands_df["player_id"] == i]
         player_analysis = analyze_player(i, subset_df)
         total_analysis[int(i)] = player_analysis
-        one_sample_ttest(subset_df)
-        win_rate_proportion_test(subset_df)
 
     total_analysis["total_rounds"] = total_rounds
     total_analysis["total_shuffles"] = game_df["shuffles"].iloc[0]

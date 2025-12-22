@@ -3,11 +3,7 @@ from backend.game import run_simulation
 from backend.game_config import config_sim
 
 st.title("Blackjack Simulator")
-
 st.header("Simlution Configurator")
-
-
-
 
 with st.container():
 
@@ -97,11 +93,9 @@ st.markdown("- no surrender or insurance" )
 st.markdown("- only natural (initial first 2 cards) Blackjack counts as Blackjack")
 st.markdown("- player's Blackjack pushes against dealer's 21")  
 
-st.session_state
-
-    
+game_id_input = st.text_input("Load existing dataset with Game ID:", placeholder="Game ID")
 if st.button("Run Simulation", icon="🔥", use_container_width=True):
+
     config = config_sim(st.session_state)
-    st.session_state["id"] = run_simulation(config)
-    st.session_state
+    st.session_state["id"] = game_id_input if game_id_input else run_simulation(config)
     st.switch_page("pages/simulation_results.py")
