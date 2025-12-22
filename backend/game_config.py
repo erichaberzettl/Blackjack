@@ -22,7 +22,7 @@ def config_sim(session_data: dict):
 
     game.dealer.hit_soft_17 = True if session_data.dealer_mode == "H17" else False
     game.shoe.decks = session_data.shoe_size or 4
-    game.shoe.auto_shuffle = session_data.auto_shuffle or "False"
+    game.shoe.auto_shuffle = session_data.auto_shuffle
     game.shoe.penetration_level = session_data.penetration or "0.8"
     game.allow_ace_resplit = session_data.ace_resplit or "True"
     game.shoe.penetration_level = session_data.penetration or "0.8"

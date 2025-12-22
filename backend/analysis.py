@@ -37,12 +37,22 @@ def analyze_player(i, df: pd.DataFrame):
     # mean return per hand
     print(f"Average/mean return per hand (bet size): {df["profit/loss"].mean()} ({players_df.at[0, "bet_size"]})")
     analysis["mean_return"] = round(float(df["profit/loss"].mean()), 4)
-    print(f"Standard deviation (sample): {df["profit/loss"].std()}")
-    analysis["std"] = df["profit/loss"].std(ddof=0)
+    print(f"Standard deviation (sample): {df["profit/loss"].std(ddof=0)}")
+    analysis["std_pop"] = round(float(df["profit/loss"].std(ddof=0)), 4)
     # starting hand value with most wins
     winner_starting_hand_value = df[df["hand_result"].isin(["Blackjack", "Win"])].groupby("hand_start_value").hand_result.size().nlargest(3).to_dict()
-    analysis["winner_start_hand"] = winner_starting_hand_value
-    
+    winner_hand_str = ""
+    print("test")
+    for j, (key, value) in enumerate(winner_starting_hand_value.items(), start=1):
+        winner_hand_str += f"{j}. {key} ({value})\n"
+    analysis["winner_start_hand"] = winner_hand_str
+    print(winner_hand_str)
+    loser_starting_hand_value = df[df["hand_result"].isin(["Bust", "Loss"])].groupby("hand_start_value").hand_result.size().nlargest(3).to_dict()
+    loser_hand_str = ""
+    for j, (key, value) in enumerate(loser_starting_hand_value.items(), start=1):
+        loser_hand_str += f"{j}. {key} ({value})\n"
+    analysis["loser_start_hand"] = loser_hand_str
+    print(loser_hand_str)
     starting_hand_frequencies = (df[["hand_start_value", "hand_result"]]
                     .groupby(["hand_start_value"])
                     .agg("count"))
@@ -110,16 +120,16 @@ def win_rate_proportion_test(df: pd.DataFrame):
     number_of_trials = df.hand_result.size
     
     print(number_of_trials)
-    win_rate =  number_of_successes / number_of_trials
-    
-    print(f"Win rate: {win_rate} vs. Null Hypothesis: 0.42")
+    winrate =  number_of_successes / number_of_trials
+    winrate = round(winrate, 4)
+    print(f"Win rate: {winrate} vs. Null Hypothesis: 0.42")
 
     zstat, pvalue = proportions_ztest(count=number_of_successes, nobs=number_of_trials, value=0.42)
 
     print(f"P value: {pvalue:.4f}")
     print(f"Z statistic: {zstat:.4f}")
 
-    return {"zstat": zstat, "pvalue": pvalue}
+    return {"winrate": winrate, "zstat": zstat, "pvalue": pvalue}
 
 def main(game_id: str):
     global hands_df, players_df, game_df, total_rounds

@@ -1,7 +1,7 @@
 import streamlit as st
 from backend.game import run_simulation
 from backend.game_config import config_sim
-
+st.set_page_config("Configurator", "🂡", layout="wide")
 st.title("Blackjack Simulator")
 st.header("Simlution Configurator")
 
@@ -98,4 +98,4 @@ if st.button("Run Simulation", icon="🔥", use_container_width=True):
 
     config = config_sim(st.session_state)
     st.session_state["id"] = game_id_input if game_id_input else run_simulation(config)
-    st.switch_page("pages/simulation_results.py")
+    st.switch_page("pages/Simulation_Results.py")

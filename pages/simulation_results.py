@@ -4,6 +4,8 @@ import pandas as pd
 import time
 import backend.analysis
 
+st.set_page_config("Simulation Results", "🂡", layout="wide")
+
 st.title("Blackjack Simulator")
 
 st.header(f"Simulation Results")
@@ -15,7 +17,7 @@ try:
 except AttributeError:
     st.warning("Please run a valid simulation first!", icon="⚠️")
     time.sleep(5)
-    st.switch_page("app.py")
+    st.switch_page("Simulation_Configurator.py")
     
 try:
     analysis = backend.analysis.main(st.session_state.id)
@@ -52,6 +54,8 @@ for i, player in enumerate(players):
     with player:
         st.markdown(f"Player {i} uses **{player_data["strat"]}**, plays **{player_data["hands"]}** hand(s)\
                     with a bet of **{player_data["bet"]}** per round")
+        st.markdown("### Metrics")
+
         chart_data = player_data["cumsum_profit"]
         st.metric("Final profit/loss", value=player_data["final_balance"], chart_data=chart_data, chart_type="area")
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -61,29 +65,68 @@ for i, player in enumerate(players):
         col4.metric("Number of wins", value=player_data["wins"])
         col5.metric("Number of splits", value=player_data["splits"])
         
-        col6, col7, col8, col9, col10 = st.columns(5)
-        col6.metric("Standard Deviation", value=player_data["std"])
-        col7.metric("Best starting hand", value=list(player_data["winner_start_hand"].keys())[0])
+        col1, col2, col3 = st.columns([1,2,2], )
+        col1.metric("Standard Deviation", value=player_data["std_pop"])
+        col2.metric("Win rate", value=player_data["winrate_test"]["winrate"])
+
+        col1, col2 = st.columns(2)
+        col1.markdown("**Most successful starting hand (wins)**")
+        col1.write(player_data["winner_start_hand"])
+        col2.markdown("**Worst starting hand (losses)**")
+        col2.write(player_data["loser_start_hand"])
+        
+        st.markdown("### Starting hand value frequencies")
+        st.bar_chart(player_data["start_hand_freq"], x_label="Starting hand value", y_label="Number of hands")
 
         st.markdown("### Significance Tests")
-        st.markdown("#### Is the average return different from 0?")
+        st.markdown("#### Fair game: Is the average return different from 0?")
 
-        st.write("Null hypothesis H0: \mu = 0")
-        st.write("Alternative hypothesis H1 != 0")
+        col1, col2 = st.columns(2)
+        col1.write("Null hypothesis $H_0: \mu_0 = 0$")
+        col2.write("Alternative hypothesis $H_1: \mu_0 ≠ 0$")
 
-        st.write("This performs a one sample t-test on the player's profit/loss data. " \
-            "It tests if the average return per hand is significantly different from the fair 0 or not")
+        st.write("This performs a two-sided one sample t-test on the player's profit/loss data. " \
+            "It tests if the average return per hand is significantly different from the fair 0 or not.")
         col1, col2 = st.columns(2, border=True)
         with col1:
             st.markdown("#### Parameters")
-            st.write(f"- Sample size n: {player_data["total_hands"]}")
-            st.write(f"- Sample mean: {player_data["return_test"][0]._estimate:.4f}")
-            st.write(f"- Standard error: {player_data["return_test"][0]._standard_error:.4f}")
+            st.write(f"- Sample size: ${player_data["total_hands"]}$")
+            st.write(f"- Sample mean: ${player_data["return_test"][0]._estimate:.4f}$")
+            st.write(f"- Standard error: ${player_data["return_test"][0]._standard_error:.4f}$")
         with col2:
             st.markdown("#### Results")
-            st.write(f"- T value: {player_data["return_test"][0]._statistic_np:.4f}")
-            st.write(f"- P value: {player_data["return_test"][0].pvalue:.4f}")
-            st.write(f"- 95% Confidence interval: [{player_data["return_test"][1].low:.4f}; \
-                    {player_data["return_test"][1].high:.4f}]")
+            st.write(f"- t value: ${player_data["return_test"][0]._statistic_np:.4f}$")
+            st.write(f"- p value: ${player_data["return_test"][0].pvalue:.4f}$")
+            st.write(f"- 95% CI: $[{player_data["return_test"][1].low:.4f}; \
+                    {player_data["return_test"][1].high:.4f}]$")
+
+        if player_data["return_test"][0].pvalue <= 0.05:
+            st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The average return per hand is probably not 0.")
+        else:
+            st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the average return per hand is not 0.")
 
         st.markdown("#### Is the winrate different from 0.42?")
+
+        col1, col2 = st.columns(2)
+        col1.write("Null hypothesis $H_0: p_0 = 0.42$")
+        col2.write("Alternative hypothesis $H_1: p_0 ≠ 0.42$")
+
+        st.write("This performs a two-sided one sample proportion test on the player's hand result data. " \
+            "The general win rate in Blackjack using Basic Strategy is said to be at around 42%. " \
+            "This test checks if the sample proportin supports this hypthesis.")
+        col1, col2 = st.columns(2, border=True)
+        with col1:
+            st.markdown("#### Parameters")
+            st.write(f"- Sample size: ${player_data["total_hands"]}$")
+            st.write(f"- Sample proportion: ${player_data["winrate_test"]["winrate"]}$")
+            st.write(f"- Known proportion: $0.42$")
+        with col2:
+            st.markdown("#### Results")
+            st.write(f"- z value: ${player_data["winrate_test"]["zstat"]:.4f}$")
+            st.write(f"- p value: ${player_data["winrate_test"]["pvalue"]:.4f}$")
+            st.write(f"- 95% Confidence interval: ")
+
+        if player_data["return_test"][0].pvalue <= 0.05:
+            st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The win rate is probably not 0.42.")
+        else:
+            st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the win rate is not 0.42.")

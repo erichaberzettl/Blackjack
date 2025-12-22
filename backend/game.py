@@ -56,7 +56,7 @@ class Deck:
 
 class Shoe: 
 
-    def __init__(self, penetration_level: float = 0.8, decks: int = 4, auto_shuffle = True):
+    def __init__(self, penetration_level: float = 0.8, decks: int = 4, auto_shuffle = False):
         self.auto_shuffle = auto_shuffle
         self.penetration_level = penetration_level if 0.2 <= penetration_level <= 1 else 0.8
         self.decks = decks if 1 <= decks <= 8 else 4
@@ -68,10 +68,13 @@ class Shoe:
         random.shuffle(self.cards)
         self.next_card_index = -1
         self.shuffles += 1
+        print("SHUFFLES", self.shuffles)
 
     def deal(self):
 
         if self.auto_shuffle:
+            print("Autoshuffle")
+
             return random.choice(self.cards)
         
         self.next_card_index += 1
