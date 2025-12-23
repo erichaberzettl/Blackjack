@@ -114,6 +114,8 @@ for i, player in enumerate(players):
         st.bar_chart(player_data["start_hand_freq"], x_label="Starting hand value", y_label="Number of hands")
 
         st.markdown("### Significance Tests")
+        st.warning("Small p values can also be caused by extremely large sample sizes.")
+        st.warning("To ensure that samples are independent and in turn that the test is valid, use the 'Continuous' shuffle mode.")
         st.markdown("#### Fair game: Is the average return different from 0?")
 
         col1, col2 = st.columns(2)
@@ -159,9 +161,11 @@ for i, player in enumerate(players):
             st.markdown("#### Results")
             st.write(f"- z value: ${player_data["winrate_test"]["zstat"]:.4f}$")
             st.write(f"- p value: ${player_data["winrate_test"]["pvalue"]:.4f}$")
-            st.write(f"- 95% Confidence interval: ")
+            #st.write(f"- 95% Confidence interval: ")
 
-        if player_data["return_test"][0].pvalue <= 0.05:
+        if player_data["winrate_test"][0].pvalue <= 0.05:
             st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The win rate is probably not 0.42.")
         else:
             st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the win rate is not 0.42.")
+
+        
