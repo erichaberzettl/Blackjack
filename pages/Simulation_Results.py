@@ -163,7 +163,7 @@ for i, player in enumerate(players):
             st.write(f"- p value: ${player_data["winrate_test"]["pvalue"]:.4f}$")
             #st.write(f"- 95% Confidence interval: ")
 
-        if player_data["winrate_test"][0].pvalue <= 0.05:
+        if player_data["winrate_test"]["pvalue"] <= 0.05:
             st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The win rate is probably not 0.42.")
         else:
             st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the win rate is not 0.42.")
