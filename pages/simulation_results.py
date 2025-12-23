@@ -1,8 +1,10 @@
 import streamlit as st
 import backend
 import pandas as pd
-import time
+import time, os
 import backend.analysis
+from zipfile import ZipFile
+from io import BytesIO
 
 st.set_page_config("Simulation Results", "🂡", layout="wide")
 
@@ -18,6 +20,8 @@ except AttributeError:
     st.warning("Please run a valid simulation first!", icon="⚠️")
     time.sleep(5)
     st.switch_page("Simulation_Configurator.py")
+
+
     
 try:
     analysis = backend.analysis.main(st.session_state.id)
@@ -27,6 +31,37 @@ except FileNotFoundError:
 except Exception:
     st.warning("There has been an error retrieving the data. Please try again.", icon="⚠️")
     st.stop()
+
+def create_zip():
+    
+    game_id = st.session_state.id
+    file_list = [
+        f"data/hand_log_{game_id}.csv",
+        f"data/player_log_{game_id}.csv",
+        f"data/game_log_{game_id}.csv",
+    ]
+
+    zip_buffer = BytesIO()
+
+    with ZipFile(zip_buffer, "w") as zipf:
+        for file in file_list:
+            if not os.path.exists(file):
+                st.error(f"Missing file: {file}")
+                return None
+            zipf.write(file)
+
+    zip_buffer.seek(0)
+    return zip_buffer
+
+
+st.download_button(
+    label="Download Zip",
+    data=create_zip(),
+    file_name=f"data_{st.session_state.id}.zip",
+    mime="application/zip",
+    icon=":material/download:",
+)
+
 tabs = [f"Player {i}" for i in range(st.session_state.player_no)]
 tabs.insert(0, "General")
 tabs.append("Data")

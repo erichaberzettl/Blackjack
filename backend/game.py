@@ -68,13 +68,10 @@ class Shoe:
         random.shuffle(self.cards)
         self.next_card_index = -1
         self.shuffles += 1
-        print("SHUFFLES", self.shuffles)
 
     def deal(self):
 
         if self.auto_shuffle:
-            print("Autoshuffle")
-
             return random.choice(self.cards)
         
         self.next_card_index += 1
