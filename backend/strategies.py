@@ -102,10 +102,67 @@ NO_BUST_STRAT = {
         8: {2: "split", 3: "split", 4: "split", 5: "split", 6: "split", 7: "split", 8: "split", 9: "split", 10: "split", 1: "split"},
         9: {2: "split", 3: "split", 4: "split", 5: "split", 6: "hit", 7: "split", 8: "split", 9: "stand", 10: "stand", 1: "stand"},
         10: {2: "stand", 3: "stand", 4: "stand", 5: "stand", 6: "stand", 7: "stand", 8: "stand", 9: "stand", 10: "stand", 1: "stand"},
-        1: {2: "split", 3: "split", 4: "split", 5: "split", 6: "split", 7: "split", 8: "split", 9: "hit", 10: "hit", 1: "hit"}
+        1: {2: "split", 3: "split", 4: "split", 5: "split", 6: "split", 7: "split", 8: "split", 9: "split", 10: "split", 1: "split"}
     }
 }
 
+DEALER_MIMIC_S17_STRAT = {
+    
+    "name": "Dealer Mimic S17 Strategy",
+
+    "hard": {
+        **{i: {j: "hit" for j in range(1,11)} for i in range(2,17)},
+        **{i: {j: "stand" for j in range(1,11)} for i in range(17, 22)}
+    },
+
+    "soft": {
+        **{i: {j: "hit" for j in range(1,11)} for i in range(13, 17)},
+        **{i: {j: "stand" for j in range(1,11)} for i in range(17, 22)}
+    },
+
+    "pair": {
+        **{i: {j: "hit" for j in range(1,11)} for i in range(1, 9)},
+        **{i: {j: "stand" for j in range(1,11)} for i in range(9, 11)}
+    }
+
+}
+
+DEALER_MIMIC_H17_STRAT = {
+
+    "name": "Dealer Mimic H17 Strategy",
+
+    "hard": {
+        **DEALER_MIMIC_S17_STRAT["hard"]
+        
+    },
+
+    "soft": {
+        **DEALER_MIMIC_S17_STRAT["soft"],
+        17: {j: "hit" for j in range(1,11)}
+    },
+
+    "pair": {
+        **DEALER_MIMIC_S17_STRAT["pair"]
+    }
+
+}
+
+ALWAYS_SPLIT_STRAT = {
+
+    "name": "Always Split Strategy",
+
+    "hard": {
+        **BASIC_STRAT["hard"]
+    },
+
+    "soft": {
+        **BASIC_STRAT["soft"]
+    },
+
+    "pair": {
+        **{i: {j: "split" for j in range(1,11)} for i in range(1,11)} 
+    }
+}
 
 if __name__ == "__main__":
 
@@ -113,5 +170,5 @@ if __name__ == "__main__":
 
     list.insert(1, 2)
 
-    print(list)
+    print()
 

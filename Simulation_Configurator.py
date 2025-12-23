@@ -35,7 +35,7 @@ with st.container():
             col1, col2, col3, col4 = st.columns([2,3,3,3], gap="small")
             col1.text(f"Player {i+1}")
             hands = col2.number_input("Hands per round", min_value=1, max_value = 5, value =st.session_state.players[i]["hands"], key=f"hands{i}")
-            strats = ["Basic Strategy", "No Bust Strategy", "Custom"]
+            strats = ["Basic Strategy", "No Bust Strategy", "Dealer Mimic S17 Strategy", "Dealer Mimic H17 Strategy", "Always Split Strategy", "Custom [WIP]"]
             strat = col3.selectbox("Strategy", strats, index=strats.index(st.session_state.players[i]["strat"]), key=f"strat{i}")
             bet_size = col4.number_input("Bet per hand", min_value=1, max_value=100, value= st.session_state.players[i]["bet_size"], key=f"bet{i}")
             st.session_state.players[i]["hands"] = hands
