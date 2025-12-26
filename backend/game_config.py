@@ -18,7 +18,7 @@ def config_sim(session_data: dict):
                 player.strategy = strats.DEALER_MIMIC_S17_STRAT
             case "Dealer Mimic H17 Strategy":
                 player.strategy = strats.DEALER_MIMIC_H17_STRAT
-            case "Aways Split Strategy":
+            case "Always Split Strategy":
                 player.strategy = strats.ALWAYS_SPLIT_STRAT
             case _:
                 player.strategy = strats.BASIC_STRAT
