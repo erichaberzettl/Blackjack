@@ -1,34 +1,46 @@
 # Blackjack Simulator and Analysis [WIP]
 
-The Blackjack Simulator simulates games of Blackjack, a popular gambling game. After running, the game analysis provides insights into how to well a player performed with metrics and statistical tests.  [Description of the game.](https://www.britannica.com/topic/blackjack-card-game)	
+This project is an interactive, customizable Blackjack simulator and analysis platform. It allows users to run large-scale Blackjack games under configurable rules and strategies and then analyze player performance using descriptive statistics, visualizations and hypothesis testing.
+A Streamlit web app provides an intuitive interface to run the simulation and explore the results and download the underlying data.
+Background on the game:
+[Blackjack explained by Britannica](https://www.britannica.com/topic/blackjack-card-game)	
 
-Currently, I am developing a Streamlit app, where people can simulate a Blackjack game according to their wishes and then look at the statistics. 
+#### Preview
+<img width="1633" height="767" alt="Screenshot_BJSim" src="https://github.com/user-attachments/assets/aa89b628-2e25-4f59-8f53-377ecb024a0f" />
+<img width="1639" height="798" alt="SC_BJSIMp1" src="https://github.com/user-attachments/assets/813f304b-832b-4116-95bb-6bc5ca750652" />
+<img width="1634" height="758" alt="SC_BJSIMp2" src="https://github.com/user-attachments/assets/5ca3244b-b024-44ca-8b3b-52672760af16" />
 
-
-#### Next steps:
-- build app MVP
-- extend data analysis 
-- add more Blackjack strategies and card-counting
+#### Project Goals
+- Simulate Blackjack games correctly and flexibly
+- Compare and try out different player strategies
+- Apply statistical inference to evaluate the outcome
+- Create an easy-to-use web interface for others to use
+- Extend the simulation and analysis platform toward prediction models
 
 ## Description
 
-The project consists of two parts. First, there is the implementation of the game itself. This is done using OOP in Python. The game is played according to the specified parameters. Players act following a given strategy. Everything is done automatically. Then, there is the option to save the game results as the following csv files:
+The project consists of two parts. First, there is the implementation of the game itself. This is done using OOP in Python. The game is played according to the specified parameters, such as the player's strategy. The simulation results are stored as the following csv files:
 
 1. hands_log.csv: tracking important information on every hand 
 2. game_log.csv: basic information about the game parameters and results
 3. player_log.csv: basic information about the players and their final balance
 
-The second part works with that data. The goal is to analyze how each player performed, which includes basic metrics, like number of wins, average return per hand and of course the final balance. However, I try to find more meaningful insights. Currently, I implemented significance tests for a player's win rate and average return. In addition, there is also a test comparing the performance of two strategies. I also plan to add logistic regression to predict the outcome of a hand, visualizations and much more.
+In the second part, the analysis layer computes the following:
+- Descriptive statistics (returns, number of wins, volatility)
+- Visualization of player balance over the course of the simulation
+- Hypothesis tests
+    - One-sample t-test (mean return vs. zero)
+    - Proportion z-test (win rate vs. benchmark)
+- (Strategy comparison test)
 
 ## Game Parameters 
 
 The simulator can be personalised. Currently, the following parameters can be modified:
 
-
 **1. Player settings**
 
 * Number of players
-* Strategy for each player (Basic Strategy, No Bust Strategy)
+* Strategy for each player (Basic Strategy, No Bust Strategy...)
 * Number of hands per player per round
 * Bet size
 
@@ -50,32 +62,10 @@ The simulator can be personalised. Currently, the following parameters can be mo
 
 3. player_log.csv: ["player_id", "hands_played", "bet_size", "strategy", "final_balance"]
 
-## Installation
+## Notes on interpretation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install.
-
-```bash
-pip install -- tbi --
-```
-
-## Usage
-
-```python
-import blackjack as bj
-
-# creates game instance with given settings
-game = bj.Game(player_no: int, hands_per_player: int, rounds: int, 
-blackjack_pays: float = 1.5, 
-ace_resplit: bool = True, seed: Any | None = None)
-
-# starts the game
-game.start()
-
-# creates csv files with game data
-game.export_as_csv()
-
-```
-
+The results are based on simulated outcomes and not real world gameplay. The game is also played slightly differently around the world. For example, the simulator deals two cards to the dealer before players playout their hands, whereas some casinos only deal the second card after all players have finished their hands.  
+The statistical tests assume independence of the sample points, which may not be given. Hands within a round of a single player are not strictly independent. Also dealing cards from a given shoe makes hands dependent. Therefore, there is also the option to draw cards randomly out of the deck. This, in turn, is unrealistic in a casino. 
 
 ## License
 
