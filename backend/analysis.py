@@ -38,7 +38,7 @@ def analyze_player(i, df: pd.DataFrame):
     # mean return per hand
     print(f"Average/mean return per hand (bet size): {df["profit/loss"].mean()} ({players_df.at[0, "bet_size"]})")
     analysis["mean_return"] = round(float(df["profit/loss"].mean()), 4)
-    print(f"Standard deviation (sample): {df["profit/loss"].std(ddof=0)}")
+    print(f"Standard deviation (population): {df["profit/loss"].std(ddof=0)}")
     analysis["std_pop"] = round(float(df["profit/loss"].std(ddof=0)), 4)
     # starting hand value with most wins
     winner_starting_hand_value = df[df["hand_result"].isin(["Blackjack", "Win"])].groupby("hand_start_value").hand_result.size().nlargest(3).to_dict()

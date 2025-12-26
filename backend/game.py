@@ -56,13 +56,14 @@ class Deck:
 
 class Shoe: 
 
-    def __init__(self, penetration_level: float = 0.8, decks: int = 4, auto_shuffle = False):
+    def __init__(self, decks: int = 4, penetration_level: float = 0.8 , auto_shuffle = False):
         self.auto_shuffle = auto_shuffle
         self.penetration_level = penetration_level if 0.2 <= penetration_level <= 1 else 0.8
         self.decks = decks if 1 <= decks <= 8 else 4
-        self.cards = [card for i in range(decks) for card in Deck().cards]
+        self.cards = [card for i in range(self.decks) for card in Deck().cards]
         self.next_card_index = -1
         self.shuffles = 0
+        self.test = decks
         
     def shuffle(self):
         random.shuffle(self.cards)
@@ -77,7 +78,12 @@ class Shoe:
         self.next_card_index += 1
         if self.next_card_index/(52*self.decks) >= self.penetration_level:
             self.shuffle()
-            
+
+        print(self.test)
+        print(self.decks)
+        print(self.next_card_index)
+        print(len(self.cards))
+        print(len(Deck().cards))
         return self.cards[self.next_card_index]
     
 class Hand:
@@ -191,7 +197,6 @@ class Game:
         self.players = [Player(i, hands_per_player) for i in range(player_no)]
         self.dealer = Dealer()
         self.shoe = Shoe()
-        self.shoe.shuffle()
         self.rounds = rounds
         self.blackjack_payout = blackjack_pays
         self.allow_ace_resplit = ace_resplit
@@ -474,6 +479,7 @@ class Game:
 
     def start(self):
 
+        self.shoe.shuffle()
         for i in range(self.rounds):
             print(" ")
             print(f"Playing round {i+1}")
@@ -482,10 +488,6 @@ class Game:
             self.new_round_reset()
 
     def export_as_csv(self, id: str):
-        # create csv with column names
-        # append the data for each round accordingly
-        # columns: round_id, hand_no, player_id, dealer_upcard, hand_value, hand_result, bet, profit/loss,
-
         
         with open(f"data/hand_log_{id}.csv", "w", newline= "") as file:
             fieldnames = ["round_id", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"]
@@ -503,7 +505,6 @@ class Game:
                                           "actions": hand.actions, "cards": [card.rank for card in hand.cards],
                                           "bet": hand.bet, "profit/loss": hand.profit})
                 
-            # basic game info: num of players, hands per player, num of rounds
 
             with open(f"data/player_log_{id}.csv", "w", newline= "") as file:
                 fieldnames = ["player_id", "hands_played", "bet_size", "strategy", "final_balance"]
@@ -534,21 +535,6 @@ class Game:
                                     "seed": self.seed})
                         
 
-
-def main():
-
-    game = Game(
-        5, 1, 100,
-    )
-    #game.players[0].strategy = strat.NO_BUST_STRAT
-    game.shoe.auto_shuffle = False
-
-
-    game.start()
-    game.export_as_csv()
-
-
-
 def run_simulation(game_config: Game):
 
     game_config.start()
@@ -558,4 +544,4 @@ def run_simulation(game_config: Game):
     return game_id
 
 if __name__ == "__main__":
-    main()
+    print("Hi")
