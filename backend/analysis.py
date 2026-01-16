@@ -151,7 +151,7 @@ def main(game_id: str):
     total_analysis["total_shuffles"] = game_df["shuffles"].iloc[0]
     total_analysis["dealer_balance"] = game_df["dealer_balance"].iloc[0]
     total_analysis["balance_plot_df"] = balance_plot()
-
+    hands_df.concat()
     return total_analysis
 
 if __name__ == "__main__":

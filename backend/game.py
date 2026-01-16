@@ -1,5 +1,5 @@
 import numpy as np
-import random, backend.strategies as strat, time, csv, uuid
+import random, backend.strategies as strat, csv, uuid
 from pathlib import Path
 
 class Card:
@@ -63,7 +63,6 @@ class Shoe:
         self.cards = [card for i in range(self.decks) for card in Deck().cards]
         self.next_card_index = -1
         self.shuffles = 0
-        self.test = decks
         
     def shuffle(self):
         random.shuffle(self.cards)
@@ -79,11 +78,6 @@ class Shoe:
         if self.next_card_index/(52*self.decks) >= self.penetration_level:
             self.shuffle()
 
-        print(self.test)
-        print(self.decks)
-        print(self.next_card_index)
-        print(len(self.cards))
-        print(len(Deck().cards))
         return self.cards[self.next_card_index]
     
 class Hand:
@@ -190,13 +184,13 @@ class Dealer:
 
 class Game:
 
-    def __init__(self, player_no: int = 1, hands_per_player: int = 1, rounds: int = 100, blackjack_pays = 1.5, ace_resplit = True, seed = None):
+    def __init__(self, player_no: int = 1, hands_per_player: int = 1, rounds: int = 100, blackjack_pays = 1.5, ace_resplit = True, seed = None, decks = 4):
         
         self.seed = seed
         random.seed(seed)
         self.players = [Player(i, hands_per_player) for i in range(player_no)]
         self.dealer = Dealer()
-        self.shoe = Shoe()
+        self.shoe = Shoe(decks)
         self.rounds = rounds
         self.blackjack_payout = blackjack_pays
         self.allow_ace_resplit = ace_resplit
@@ -226,16 +220,21 @@ class Game:
     def new_round_reset(self):
 
         for player in self.players:
-            player.normal_split_count= 0
+            player.normal_split_count = 0
+            player.ace_split_count = 0
             player.hands = []
 
     def playout_dealer_hand(self):
 
         print("Playing dealer hand...", str(self.dealer.hand))
 
-        while self.dealer.hand.value < (18 if self.dealer.hit_soft_17 else 17):
+        while self.dealer.hand.value < 17:
             self.dealer.hand.add_card(self.shoe)
             print(str(self.dealer.hand))
+        if self.dealer.hand.is_soft() and self.dealer.hand.value == 17 and self.dealer.hit_soft_17:
+            self.dealer.hand.add_card(self.shoe)
+            print(str(self.dealer.hand))
+
 
     def test_split(self):
 
@@ -288,12 +287,43 @@ class Game:
             new_hand.add_card(self.shoe)
             hand.add_card(self.shoe)
 
+            if new_hand.is_blackjack():
+                new_hand.result = "Win"
+                new_hand.to_resolve = False
+            if hand.is_blackjack():
+                hand.result = "Win"
+                hand.to_resolve = False
+
             hand_index = total_hands.index(hand)
             total_hands.insert(hand_index + 1, new_hand)
         else:
-            hand.to_resolve = False
-            # Force Stand
-            # TODO Determine action for hard hand
+            match hand.player.strategy["hard"][hand.value][self.dealer.upcard.value]:
+                case "stand" :
+                    print("Stand:", str(hand))
+                    hand.to_resolve = False
+                    hand.actions += "S" 
+
+                case "hit":
+                    print("Hit:", str(hand))
+                    hand.add_card(self.shoe)
+                    hand.actions += "H" 
+
+                case "double":
+                    if len(hand.cards) != 2:
+                        hand.add_card(self.shoe)
+                        print("Hit (double not possible):", str(hand))
+                        hand.actions += "H"
+                    else:
+                        print("Double:", str(hand))
+                        hand.add_card(self.shoe)
+                        hand.bet *= 2
+                        hand.actions += "D"
+                        
+                        if hand.is_bust():
+                            print("Bust")
+                            hand.result = "Bust"
+                        
+                        hand.to_resolve = False
 
 
     def ace_split(self, hand: Hand, total_hands: list[Hand]):
@@ -425,6 +455,7 @@ class Game:
                             break
                         elif hand.is_pair() and hand.cards[0].rank == "A" and hand.cards[1].rank == "A":    
                             self.ace_split(hand, total_hands)
+                            hands_to_resolve = True
                         else:
                             self.normal_split(hand, total_hands)
 
@@ -452,9 +483,7 @@ class Game:
         # balances start at 0 and are not changed
         # balance is updated according to a hands outcome
         for hand in hands: 
-
             match hand.result:
-                
                 case "Blackjack":
                     hand.player.balance += hand.bet * self.blackjack_payout
                     self.dealer.balance -= hand.bet * self.blackjack_payout
@@ -465,17 +494,14 @@ class Game:
                     self.dealer.balance -= hand.bet 
                     hand.profit = hand.bet
 
-
                 case "Bust" | "Loss":
                     hand.player.balance -= hand.bet
                     self.dealer.balance += hand.bet 
-                    hand.profit -= hand.bet
+                    hand.profit = - hand.bet
 
                 case _:
                     continue
 
-                
-                
 
     def start(self):
 
