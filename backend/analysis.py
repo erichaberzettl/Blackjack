@@ -140,7 +140,6 @@ def main(game_id: str):
 
     total_rounds = game_df["rounds"].iloc[0]
 
-
     total_analysis = {}
     for i in hands_df["player_id"].unique():
         subset_df = hands_df[hands_df["player_id"] == i]
@@ -151,7 +150,7 @@ def main(game_id: str):
     total_analysis["total_shuffles"] = game_df["shuffles"].iloc[0]
     total_analysis["dealer_balance"] = game_df["dealer_balance"].iloc[0]
     total_analysis["balance_plot_df"] = balance_plot()
-
+    
     return total_analysis
 
 if __name__ == "__main__":

@@ -28,8 +28,8 @@ try:
 except FileNotFoundError:
     st.warning("The entered Game ID does not exist. Please try again or configure a new simulation.", icon="⚠️")
     st.stop()
-except Exception:
-    st.warning("There has been an error retrieving the data. Please try again.", icon="⚠️")
+except Exception as e:
+    st.warning(f"There has been an error retrieving the data. Please try again. {e}", icon="⚠️")
     st.stop()
 
 def create_zip():
