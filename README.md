@@ -1,5 +1,7 @@
 # Blackjack Simulator and Analysis [WIP]
 
+Visit me: https://blackjackstats.streamlit.app/
+
 This project is an interactive, customizable Blackjack simulator and analysis platform. It allows users to run large-scale Blackjack games under configurable rules and strategies and then analyze player performance using descriptive statistics, visualizations and hypothesis testing.
 A Streamlit web app provides an intuitive interface to run the simulation and explore the results and download the underlying data.
 Background on the game:
@@ -9,6 +11,7 @@ Background on the game:
 <img width="1633" height="767" alt="Screenshot_BJSim" src="https://github.com/user-attachments/assets/aa89b628-2e25-4f59-8f53-377ecb024a0f" />
 <img width="1639" height="798" alt="SC_BJSIMp1" src="https://github.com/user-attachments/assets/813f304b-832b-4116-95bb-6bc5ca750652" />
 <img width="1634" height="758" alt="SC_BJSIMp2" src="https://github.com/user-attachments/assets/5ca3244b-b024-44ca-8b3b-52672760af16" />
+<img width="1130" height="665" alt="Screenshot 2026-03-09 at 16 33 26" src="https://github.com/user-attachments/assets/7d6a4015-1077-43cd-90b4-8585fc700384" />
 
 #### Project Goals
 - Simulate Blackjack games correctly and flexibly
@@ -16,6 +19,13 @@ Background on the game:
 - Apply statistical inference to evaluate the outcome
 - Create an easy-to-use web interface for others to use
 - Extend the simulation and analysis platform toward prediction models
+
+#### News
+
+- currently refactoring the whole game engine
+    - to improve code readability
+    - to allow easy extensions
+    - to facilitate playing manually
 
 ## Description
 
@@ -31,6 +41,7 @@ In the second part, the analysis layer computes the following:
 - Hypothesis tests
     - One-sample t-test (mean return vs. zero)
     - Proportion z-test (win rate vs. benchmark)
+- Prediction of win/loss probability of a specific hand using logistic regression
 - (Strategy comparison test)
 
 ## Game Parameters 
