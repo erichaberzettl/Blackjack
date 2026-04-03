@@ -1,6 +1,5 @@
 import streamlit as st
-from backend.game import run_simulation
-from backend.game_config import config_sim
+from backend.game_simulation import config_game, run_simulation
 st.set_page_config("Configurator", "🂡", layout="wide")
 st.title("Blackjack Simulator")
 st.header("Simlution Configurator")
@@ -32,15 +31,18 @@ with st.container():
             st.session_state.players[i] = {"hands": 1, "strat": "Basic Strategy", "bet_size": 1}
 
         with st.container(border=True):
-            col1, col2, col3, col4 = st.columns([2,3,3,3], gap="small")
+            col1, col2, col3, col4, col5= st.columns([2,2,2,2,2], gap="small")
             col1.text(f"Player {i}")
             hands = col2.number_input("Hands per round", min_value=1, max_value = 3, value =st.session_state.players[i]["hands"], key=f"hands{i}")
             strats = ["Basic Strategy", "No Bust Strategy", "Dealer Mimic S17 Strategy", "Dealer Mimic H17 Strategy", "Always Split Strategy", "Custom [WIP]"]
             strat = col3.selectbox("Strategy", strats, index=strats.index(st.session_state.players[i]["strat"]), key=f"strat{i}")
             bet_size = col4.number_input("Bet per hand", min_value=1, max_value=100, value= st.session_state.players[i]["bet_size"], key=f"bet{i}")
+            insurance = col5.selectbox("Pay insurance", [True, False], key=f"insurance{i}")
             st.session_state.players[i]["hands"] = hands
-            st.session_state.players[i]["strat"] = strat
+            st.session_state.players[i]["strategy"] = strat
             st.session_state.players[i]["bet_size"] = bet_size
+            st.session_state.players[i]["insurance"] = insurance
+
 
 
 col1, col2 = st.columns(2)
@@ -58,19 +60,11 @@ with col2:
         shoe_size = st.segmented_control("Number of decks used", [1, 2, 4, 6, 8], selection_mode="single", default= 4, width="stretch")
         st.session_state.shoe_size = shoe_size
 
-col1, col2 = st.columns(2)
-with col1:
 
-    with st.container(border=True):
-        st.markdown("Blackjack Payout")
-        blackjack_payout = st.segmented_control(" ", ["3:2", "6:5", "1:1", "2:1"], selection_mode="single", default="3:2", width="stretch")
-        st.session_state.blackjack_payout = blackjack_payout  
-
-with col2:
-    with st.container(border=True):
-        st.markdown("Ace resplitting")
-        ace_resplit = st.radio(" ", [True, False], width="stretch", horizontal=True)
-        st.session_state.ace_resplit = ace_resplit
+with st.container(border=True):
+    st.markdown("Blackjack Payout")
+    blackjack_payout = st.segmented_control(" ", ["3:2", "6:5", "1:1", "2:1"], selection_mode="single", default="3:2", width="stretch")
+    st.session_state.blackjack_payout = blackjack_payout  
 
 
 with st.container(border=True):
@@ -88,14 +82,14 @@ with st.container(border=True):
 st.markdown("#### Rules that can't be changed:")
             
 st.markdown("- the dealer is dealt his second cards before the players play")
-st.markdown("- double after split is always allowd")
-st.markdown("- no surrender or insurance" )
-st.markdown("- only natural (initial first 2 cards) Blackjack counts as Blackjack")
-st.markdown("- player's Blackjack pushes against dealer's 21")  
+st.markdown("- double after split is always allowed")
+st.markdown("- no surrender" )
+st.markdown("- player's Blackjack pushes against dealer's blackjack")
+st.markdown("- player's Blackjack wins against dealer's 21")  
 
 game_id_input = st.text_input("Load existing dataset with Game ID:", placeholder="Game ID")
 if st.button("Run Simulation", icon="🔥", use_container_width=True):
 
-    config = config_sim(st.session_state)
+    config = config_game(st.session_state)
     st.session_state["id"] = game_id_input if game_id_input else run_simulation(config)
     st.switch_page("pages/Simulation_Results.py")

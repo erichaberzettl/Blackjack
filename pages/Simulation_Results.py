@@ -2,7 +2,7 @@ import streamlit as st
 import backend
 import pandas as pd
 import time, os
-import backend.analysis
+import backend.analysis2
 from zipfile import ZipFile
 from io import BytesIO
 
@@ -24,7 +24,7 @@ except AttributeError:
 
     
 try:
-    analysis = backend.analysis.main(st.session_state.id)
+    analysis = backend.analysis2.main(st.session_state.id)
 except FileNotFoundError:
     st.warning("The entered Game ID does not exist. Please try again or configure a new simulation.", icon="⚠️")
     st.stop()
@@ -78,37 +78,59 @@ with general:
     col2.metric("Shuffles", analysis["total_shuffles"])
     col3.metric("Final dealer balance", analysis["dealer_balance"])
 
-    st.line_chart(analysis["balance_plot_df"], x="Round number")
+    st.line_chart(analysis["balance_plot"])
     
  
 for i, player in enumerate(players):
     if i >= st.session_state.player_no:
         break
 
-    player_data = analysis[int(i)]
+    player_data = analysis["players_analysis"][i]
     with player:
-        st.markdown(f"Player {i} uses **{player_data["strat"]}**, plays **{player_data["hands"]}** hand(s)\
-                    with a bet of **{player_data["bet"]}** per round")
+        st.markdown(f"Player {i} uses **{player_data["strategy"]}**, plays **{player_data["hands_played"]}** hand(s)\
+                    with a bet of **{player_data["bet_size"]}** per round")
         st.markdown("### Metrics")
 
-        chart_data = player_data["cumsum_profit"]
+        chart_data = player_data["profit_cumsum"]
         st.metric("Final profit/loss", value=player_data["final_balance"], chart_data=chart_data, chart_type="area")
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("Total hands played", value=player_data["total_hands"])
-        col2.metric("Avg return per hand", value=player_data["mean_return"])
-        col3.metric("Number of Blackjacks", value=player_data["blackjacks"])
-        col4.metric("Number of wins", value=player_data["wins"])
-        col5.metric("Number of splits", value=player_data["splits"])
-        
-        col1, col2, col3 = st.columns([1,2,2], )
-        col1.metric("Standard Deviation", value=player_data["std_pop"])
-        col2.metric("Win rate", value=player_data["winrate_test"]["winrate"])
+        col2.metric("Avg return per hand", value=round(player_data["mean_return"], 4))
+        col3.metric("Standard Deviation", value=round(player_data["std_pop"], 4))
+        col4.metric("Win rate", value=round(player_data["win_rate_test"]["winrate"], 4))
+        col5.metric("Number of splits", value=player_data["split_freq"])
 
-        col1, col2 = st.columns(2)
+        cols = st.columns(5)
+        try:
+            cols[0].metric("Number of Blackjacks", value=player_data["result_freqs"]["Blackjack"])
+        except:
+            cols[0].metric("Number of Blackjacks", value=0)
+        try:
+            cols[1].metric("Number of wins", value=player_data["result_freqs"]["Win"])
+        except:
+            cols[1].metric("Number of wins", value=0)
+        try:
+            cols[2].metric("Number of losses", value=player_data["result_freqs"]["Loss"])
+        except:
+            cols[2].metric("Number of losses", value=0)
+        try:
+            cols[3].metric("Number of busts", value=player_data["result_freqs"]["Bust"])
+        except:
+            cols[3].metric("Number of busts", value=0)
+        try:
+            cols[4].metric("Number of pushes", value=player_data["result_freqs"]["Push"])
+        except:
+            cols[4].metric("Number of pushes", value=0)
+
+        #st.pyplot(player_data["result_freqs_fig"])
+
+        col1, col2, col3 = st.columns(3)
         col1.markdown("**Most successful starting hand (wins)**")
-        col1.write(player_data["winner_start_hand"])
+        col1.write(player_data["winner_start_hands"])
         col2.markdown("**Worst starting hand (losses)**")
-        col2.write(player_data["loser_start_hand"])
+        col2.write(player_data["loser_start_hands"])
+        col3.markdown("**Most pushed hands (by final hand value)**")
+        col3.write(player_data["push_final_hands"])
         
         st.markdown("### Starting hand value frequencies")
         st.bar_chart(player_data["start_hand_freq"], x_label="Starting hand value", y_label="Number of hands")
@@ -123,26 +145,26 @@ for i, player in enumerate(players):
         col2.write("Alternative hypothesis $H_1: \mu_0 ≠ 0$")
 
         st.write("This performs a two-sided one sample t-test on the player's profit/loss data. " \
-            "It tests if the average return per hand is significantly different from the fair 0 or not.")
+            "It tests if the average return per hand is significantly different from 0 or not.")
         col1, col2 = st.columns(2, border=True)
         with col1:
             st.markdown("#### Parameters")
             st.write(f"- Sample size: ${player_data["total_hands"]}$")
-            st.write(f"- Sample mean: ${player_data["return_test"][0]._estimate:.4f}$")
-            st.write(f"- Standard error: ${player_data["return_test"][0]._standard_error:.4f}$")
+            st.write(f"- Sample mean: ${player_data["mean_return_test"][0]._estimate:.4f}$")
+            st.write(f"- Standard error: ${player_data["mean_return_test"][0]._standard_error:.4f}$")
         with col2:
             st.markdown("#### Results")
-            st.write(f"- t value: ${player_data["return_test"][0]._statistic_np:.4f}$")
-            st.write(f"- p value: ${player_data["return_test"][0].pvalue:.4f}$")
-            st.write(f"- 95% CI: $[{player_data["return_test"][1].low:.4f}; \
-                    {player_data["return_test"][1].high:.4f}]$")
+            st.write(f"- t value: ${player_data["mean_return_test"][0]._statistic_np:.4f}$")
+            st.write(f"- p value: ${player_data["mean_return_test"][0].pvalue:.4f}$")
+            st.write(f"- 95% CI: $[{player_data["mean_return_test"][1].low:.4f}; \
+                    {player_data["mean_return_test"][1].high:.4f}]$")
 
-        if player_data["return_test"][0].pvalue <= 0.05:
+        if player_data["mean_return_test"][0].pvalue <= 0.05:
             st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The average return per hand is probably not 0.")
         else:
             st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the average return per hand is not 0.")
 
-        st.markdown("#### Is the winrate different from 0.42?")
+        st.markdown("#### Is the winrate different from 42%?")
 
         col1, col2 = st.columns(2)
         col1.write("Null hypothesis $H_0: p_0 = 0.42$")
@@ -150,22 +172,22 @@ for i, player in enumerate(players):
 
         st.write("This performs a two-sided one sample proportion test on the player's hand result data. " \
             "The general win rate in Blackjack using Basic Strategy is said to be at around 42%. " \
-            "This test checks if the sample proportin supports this hypthesis.")
+            "This test checks if the sample proportion supports this hypothesis.")
         col1, col2 = st.columns(2, border=True)
         with col1:
             st.markdown("#### Parameters")
             st.write(f"- Sample size: ${player_data["total_hands"]}$")
-            st.write(f"- Sample proportion: ${player_data["winrate_test"]["winrate"]}$")
+            st.write(f"- Sample proportion: ${player_data["win_rate_test"]["winrate"]}$")
             st.write(f"- Known proportion: $0.42$")
         with col2:
             st.markdown("#### Results")
-            st.write(f"- z value: ${player_data["winrate_test"]["zstat"]:.4f}$")
-            st.write(f"- p value: ${player_data["winrate_test"]["pvalue"]:.4f}$")
+            st.write(f"- z value: ${player_data["win_rate_test"]["zstat"]:.4f}$")
+            st.write(f"- p value: ${player_data["win_rate_test"]["pvalue"]:.4f}$")
             #st.write(f"- 95% Confidence interval: ")
 
-        if player_data["winrate_test"]["pvalue"] <= 0.05:
-            st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The win rate is probably not 0.42.")
+        if player_data["win_rate_test"]["pvalue"] <= 0.05:
+            st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The win rate is probably not 42%.")
         else:
-            st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the win rate is not 0.42.")
+            st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the win rate is not 42%.")
 
         
