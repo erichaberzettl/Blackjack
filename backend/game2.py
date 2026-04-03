@@ -1,8 +1,9 @@
 import numpy as np
-import random, strategies as strat, csv, uuid
+import random, backend.strategies as strat, csv, uuid
 from pathlib import Path
 import sys
-import manual_mode, auto_mode
+import backend.manual_mode, backend.auto_mode
+#import auto_mode
 
 class Card:
 
@@ -177,9 +178,9 @@ class Player:
 
 class Dealer:
 
-    def __init__(self, hit_soft_17: bool = False):
+    def __init__(self, hit_soft_17: bool = False, shoe = Shoe()):
         self.hand: Hand = None
-        self.shoe = Shoe(4)
+        self.shoe = shoe
         self.id = 999
         self.balance = 0
         self.hit_soft_17 = hit_soft_17
@@ -241,13 +242,13 @@ class Dealer:
 
 class Game:
 
-    def __init__(self, players: list[Player], dealer: Dealer, debug_mode = True, rounds = 1, input_provider = None, output_provider = None):
+    def __init__(self, players: list[Player], dealer: Dealer, debug_mode = True, rounds = 1, blackjack_pays = 1.5, input_provider = None, output_provider = None):
         self.id = uuid.uuid1()
         self.players = players
         self.dealer = dealer
         self.debug = debug_mode
         self.rounds = rounds
-        self.blackjack_pays = 1.5
+        self.blackjack_pays = blackjack_pays
         self.input_provider = input_provider
         self.output_provider = output_provider
         self.hand_data = []
@@ -268,7 +269,7 @@ class Game:
     
     def write_hands(self, writer, round_hands, round_index):
 
-        for hand in round_hands[:-1]:
+        for hand in round_hands:
             writer.writerow({"round_id": round_index, "player_id": hand.player.id, 
                                     "dealer_upcard": round_hands[-1].cards[0].value, 
                                     "dealer_hand_value": round_hands[-1].value,
@@ -468,6 +469,7 @@ class Game:
                         hand.result = "Blackjack"
                         hand.player.balance += 2.5 * hand.bet
                         hand.profit = 1.5 * hand.bet
+                        self.dealer.balance -=  1.5 * hand.bet
                     
                     self.output_provider(f"Player's {hand.value} vs. Dealer's {dealer_val}: {hand.result}")
                     self.hand_data.append(hand)
@@ -476,15 +478,18 @@ class Game:
                 if (x:=hand.value) > 21: # bust player
                     hand.result = "Bust"
                     hand.profit = - hand.bet
+                    self.dealer.balance += hand.bet
 
                 elif (dealer_val > 21) or dealer_val < x: # bust dealer or better hand
                     hand.result = "Win"
                     hand.player.balance += 2 * hand.bet
                     hand.profit = hand.bet
+                    self.dealer.balance -= hand.bet
 
                 elif (dealer_val > x): # loss
                     hand.result = "Loss"
                     hand.profit = - hand.bet
+                    self.dealer.balance += hand.bet
                 
                 elif (x == dealer_val): # push
                     hand.result = "Push"
@@ -497,7 +502,6 @@ class Game:
                 self.hand_data.append(hand)
 
             self.output_provider(f"New balance of player {player.id}: {player.balance}")  
-            self.hand_data.append(self.dealer.hand)
 
     def write_metadata_to_csv(self):
 
@@ -551,18 +555,16 @@ class Game:
                                         "bet": hand.bet, "profit/loss": hand.profit})
                 
 
-# game = Game([Player(1, hands_played=1 ,pay_insurance=True)], 
-#             Dealer(), 
-#             rounds = 1, 
-#             input_provider=manual_mode.get_input, 
-#             output_provider=manual_mode.output
-#             )
 
-game = Game([Player(1, hands_played=1 ,pay_insurance=False)], 
-            Dealer(), 
-            rounds = 100000, 
-            input_provider=auto_mode.get_action, 
-            output_provider=auto_mode.output
-            )
-game.play(export_data=True)
+if __name__ == "__main__":
+    game = Game([Player(1, hands_played=1 ,pay_insurance=True)], 
+                Dealer(), 
+                rounds = 10, 
+                input_provider=auto_mode.get_action, 
+                output_provider=auto_mode.output
+                )
+
+    game.play()
+
+
 
