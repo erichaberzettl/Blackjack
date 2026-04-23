@@ -3,7 +3,6 @@ import random, backend.strategies as strat, csv, uuid
 from pathlib import Path
 import sys
 import backend.manual_mode, backend.auto_mode
-#import auto_mode
 
 class Card:
 
@@ -554,17 +553,4 @@ class Game:
                                         "actions": hand.actions, "cards": [card.rank for card in hand.cards],
                                         "bet": hand.bet, "profit/loss": hand.profit})
                 
-
-
-if __name__ == "__main__":
-    game = Game([Player(1, hands_played=1 ,pay_insurance=True)], 
-                Dealer(), 
-                rounds = 10, 
-                input_provider=auto_mode.get_action, 
-                output_provider=auto_mode.output
-                )
-
-    game.play()
-
-
 
