@@ -83,7 +83,6 @@ st.markdown("- player's Blackjack wins against dealer's 21")
 
 game_id_input = st.text_input("Load existing dataset with Game ID:", placeholder="Game ID")
 st.session_state["static_graphs"] = st.checkbox("Display static visualizations (Recommended when simulating 10000s of hands)")
-st.session_state["static_graphs"]
 if st.button("Run Simulation", icon="🔥", use_container_width=True):
 
     config = config_game(st.session_state)

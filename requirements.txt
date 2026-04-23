@@ -8,3 +8,4 @@ streamlit==1.51.0
 toml==0.10.2
 joblib
 scikit-learn
+seaborn
