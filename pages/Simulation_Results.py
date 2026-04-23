@@ -5,6 +5,9 @@ import time, os
 import backend.analysis2
 from zipfile import ZipFile
 from io import BytesIO
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.set_style("darkgrid")
 
 st.set_page_config("Simulation Results", "🂡", layout="wide")
 
@@ -53,7 +56,6 @@ def create_zip():
     zip_buffer.seek(0)
     return zip_buffer
 
-
 st.download_button(
     label="Download Zip",
     data=create_zip(),
@@ -78,8 +80,10 @@ with general:
     col2.metric("Shuffles", analysis["total_shuffles"])
     col3.metric("Final dealer balance", analysis["dealer_balance"])
 
-    st.line_chart(analysis["balance_plot"])
-    
+    if st.session_state["static_graphs"]:
+        st.pyplot(analysis["static_balance_plot"])
+    else:
+        st.line_chart(analysis["balance_plot"])
  
 for i, player in enumerate(players):
     if i >= st.session_state.player_no:
@@ -92,7 +96,7 @@ for i, player in enumerate(players):
         st.markdown("### Metrics")
 
         chart_data = player_data["profit_cumsum"]
-        st.metric("Final profit/loss", value=player_data["final_balance"], chart_data=chart_data, chart_type="area")
+        st.metric("Final profit/loss", value=player_data["final_balance"], chart_data=chart_data, chart_type="line")
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("Total hands played", value=player_data["total_hands"])
         col2.metric("Avg return per hand", value=round(player_data["mean_return"], 4))
@@ -122,8 +126,6 @@ for i, player in enumerate(players):
         except:
             cols[4].metric("Number of pushes", value=0)
 
-        #st.pyplot(player_data["result_freqs_fig"])
-
         col1, col2, col3 = st.columns(3)
         col1.markdown("**Most successful starting hand (wins)**")
         col1.write(player_data["winner_start_hands"])
@@ -133,8 +135,11 @@ for i, player in enumerate(players):
         col3.write(player_data["push_final_hands"])
         
         st.markdown("### Starting hand value frequencies")
-        st.bar_chart(player_data["start_hand_freq"], x_label="Starting hand value", y_label="Number of hands")
-
+        if st.session_state["static_graphs"]:
+            st.pyplot(player_data["static_start_hand_freq_plot"])
+        else:
+            st.bar_chart(player_data["start_hand_freq"], x_label="Starting hand value", y_label="Number of hands")
+        
         st.markdown("### Significance Tests")
         st.warning("Small p values can also be caused by extremely large sample sizes.")
         st.warning("To ensure that samples are independent and in turn that the test is valid, use the 'Continuous' shuffle mode.")
@@ -160,9 +165,9 @@ for i, player in enumerate(players):
                     {player_data["mean_return_test"][1].high:.4f}]$")
 
         if player_data["mean_return_test"][0].pvalue <= 0.05:
-            st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The average return per hand is probably not 0.")
+            st.write("At a significance level of $α = 0.05$ the null hypothesis can be rejected. The average return per hand is probably not 0.")
         else:
-            st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the average return per hand is not 0.")
+            st.write("At a significance level of $α = 0.05$ the null hypothesis can't be rejected. We can't say that the average return per hand is not 0.")
 
         st.markdown("#### Is the winrate different from 42%?")
 
@@ -183,11 +188,10 @@ for i, player in enumerate(players):
             st.markdown("#### Results")
             st.write(f"- z value: ${player_data["win_rate_test"]["zstat"]:.4f}$")
             st.write(f"- p value: ${player_data["win_rate_test"]["pvalue"]:.4f}$")
-            #st.write(f"- 95% Confidence interval: ")
 
         if player_data["win_rate_test"]["pvalue"] <= 0.05:
-            st.write("At a significance level of $ α = 5\% $ the null hypothesis can be rejected. The win rate is probably not 42%.")
+            st.write("At a significance level of $ α = 0.05$ the null hypothesis can be rejected. The win rate is probably not 42%.")
         else:
-            st.write("At a significance level of $ α = 5\% $ the null hypothesis can't be rejected. We can't say that the win rate is not 42%.")
+            st.write("At a significance level of $α = 0.05$ the null hypothesis can't be rejected. We can't say that the win rate is not 42%.")
 
         

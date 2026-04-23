@@ -2,6 +2,7 @@ import pandas as pd
 import statsmodels as stats
 from scipy.stats import ttest_1samp
 from statsmodels.stats.proportion import proportions_ztest
+import matplotlib.pyplot as plt
 
 
 def main(game_id: str = "8af4bbcc-2f3f-11f1-90ac-d2dcc4e548ff"):
@@ -15,7 +16,7 @@ def main(game_id: str = "8af4bbcc-2f3f-11f1-90ac-d2dcc4e548ff"):
                                   "hand_start_value": "int8",
                                   "hand_final_value": "int8",
                                   "bet": "int16",
-                                  "profit/loss": "float32",
+                                  "profit/loss": "float64",
                                   "hand_result": "category"})
 
     players_df = pd.read_csv(f"data/player_log_{game_id}.csv")
@@ -25,18 +26,18 @@ def main(game_id: str = "8af4bbcc-2f3f-11f1-90ac-d2dcc4e548ff"):
     total_analysis["total_rounds"] = game_df.loc[0, "rounds"]
     total_analysis["total_shuffles"] = game_df.loc[0, "shuffles"]
     total_analysis["dealer_balance"] = game_df.loc[0, "dealer_balance"]
-    total_analysis["balance_plot"] = balance_plot()
+    total_analysis["balance_plot"] = get_balance_plot_data()
+    total_analysis["static_balance_plot"] = create_static_balance_plot(total_analysis["balance_plot"])
 
     players_analysis = {}
-    print(hands_df["player_id"].unique())
     for i in hands_df["player_id"].unique():
-
         players_analysis[int(i)] = analyze_player(int(i))
+
     total_analysis["players_analysis"] = players_analysis
 
     return total_analysis
 
-def balance_plot():
+def get_balance_plot_data():
 
     players_profit_cumsum = (hands_df
                                 .pivot_table(index="round_id",
@@ -45,7 +46,21 @@ def balance_plot():
                                             aggfunc="sum")
                                 .cumsum())
     
-    return players_profit_cumsum    
+    return players_profit_cumsum   
+
+def create_static_balance_plot(df):
+
+    fig, ax = plt.subplots()
+    df.plot(ax=ax, xlabel="Round Number", ylabel="Balance").legend(bbox_to_anchor=(1,1))
+    return fig
+
+def create_static_start_hand_freq_plot(players_df):
+
+    fig, ax = plt.subplots()
+    df = players_df.hand_start_value.value_counts().sort_index()
+    df.plot.bar(ax=ax, xlabel="Start hand value", ylabel="Frequency", figsize=(4,2), rot=0, fontsize=8)
+    return fig
+
 
 def analyze_player(id):
 
@@ -66,9 +81,6 @@ def analyze_player(id):
     analysis["final_balance"] =  player_metadata_df.loc[0, "final_balance"]
         # wins
     analysis["result_freqs"] = player_hands_df.hand_result.value_counts().to_dict()
-    ax = player_hands_df.hand_result.value_counts().plot.pie(startangle=90,autopct="%1.1f%%",
-    ylabel="", figsize=(5,5))
-    analysis["result_freqs_fig"] = ax.get_figure()
 
     # doubles
     analysis["double_freq"] = player_hands_df.loc[player_hands_df.actions == "D"].count()
@@ -107,7 +119,6 @@ def analyze_player(id):
     analysis["loser_start_hands"] = loser_hand_str
     
     # most pushed hands by end value
-
     push_final_hand_value = (player_hands_df
      .loc[player_hands_df.hand_result == "Push"]
      .groupby("hand_final_value")
@@ -125,6 +136,8 @@ def analyze_player(id):
      .value_counts()
      .to_dict())
     
+    analysis["static_start_hand_freq_plot"] = create_static_start_hand_freq_plot(player_hands_df)
+
     # cumsum profits
     analysis["profit_cumsum"] = (player_hands_df["profit/loss"]
         .cumsum()
@@ -137,7 +150,6 @@ def analyze_player(id):
 
 def ttest_mean_return(player_hands_df: pd.DataFrame):
 
-    # later: implement without library
     results = ttest_1samp(player_hands_df["profit/loss"], popmean=0)
     conf_interval = results.confidence_interval()
 
@@ -145,7 +157,6 @@ def ttest_mean_return(player_hands_df: pd.DataFrame):
 
 def proptest_win_rate(player_hands_df: pd.DataFrame):
 
-    # later: implement without library
     wins = (player_hands_df
             .loc[:,"hand_result"]
             .value_counts()[["Blackjack", "Win"]]
@@ -159,6 +170,5 @@ def proptest_win_rate(player_hands_df: pd.DataFrame):
     return {"winrate": round(wins/observations, 4), "zstat": zstat, "pvalue": pvalue}
 
 if __name__ == "__main__":
-    result = main(
-    )
+    result = main()
     print(result)

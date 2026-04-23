@@ -6,6 +6,9 @@ def config_game(session_data: dict):
 
     player_list = []
     for i, player in session_data.players.items():
+
+        if i == session_data.player_no:
+            break
         player = Player(id=i,     
                         hands_played=player["hands"],
                         bet_size=player["bet_size"],
@@ -17,9 +20,8 @@ def config_game(session_data: dict):
     
     
     decks = session_data.shoe_size or 4
-    auto_shuffle = session_data.auto_shuffle or False
     penetration_level = session_data.penetration or "0.8"
-    shoe = Shoe(decks=decks, penetration_level=penetration_level, auto_shuffle=auto_shuffle)
+    shoe = Shoe(decks=decks, penetration_level=penetration_level)
 
 
 

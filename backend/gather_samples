@@ -1,7 +1,0 @@
-from game import Game, run_simulation
-
-# 1 player, 1 hand, S17, 2, 4,6,8 decks, 
-
-for decks in [2,4,6,8]:
-    game = Game(player_no=1, hands_per_player=1, rounds=100000, decks=decks)
-    id = run_simulation(game)

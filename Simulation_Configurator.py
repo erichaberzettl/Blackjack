@@ -20,7 +20,7 @@ with st.container():
 
             
             st.markdown("Number of rounds")
-            rounds = st.slider(label=" ", min_value=1, max_value=10000, value=100, key="rounds")
+            rounds = st.slider(label=" ", min_value=1, max_value=1000000, value=100, key="rounds")
 
     if "players" not in st.session_state:
         st.session_state.players = {}
@@ -68,15 +68,9 @@ with st.container(border=True):
 
 
 with st.container(border=True):
-        st.markdown("Shuffle mode")
-        shuffle_mode = st.segmented_control(" ", ["Cut-card", "Continuous"], 
-                             selection_mode="single", key="shuffle_mode", default="Cut-card", width="stretch")
-        
-        auto_shuffle = True if shuffle_mode == "Continuous" else False
-        st.session_state.auto_shuffle = auto_shuffle
         st.markdown("Shoe penetration level")
         penetration_level = st.number_input(format="%0.1f", label="Shoe penetration until shuffle as decimal", min_value=0.1, 
-                                            max_value=1.0, value=0.8, step=0.1, disabled=auto_shuffle, key="penetration")
+                                            max_value=1.0, value=0.8, step=0.1, key="penetration")
 
 
 st.markdown("#### Rules that can't be changed:")
@@ -88,6 +82,8 @@ st.markdown("- player's Blackjack pushes against dealer's blackjack")
 st.markdown("- player's Blackjack wins against dealer's 21")  
 
 game_id_input = st.text_input("Load existing dataset with Game ID:", placeholder="Game ID")
+st.session_state["static_graphs"] = st.checkbox("Display static visualizations (Recommended when simulating 10000s of hands)")
+st.session_state["static_graphs"]
 if st.button("Run Simulation", icon="🔥", use_container_width=True):
 
     config = config_game(st.session_state)
