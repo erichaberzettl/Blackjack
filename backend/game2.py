@@ -306,7 +306,7 @@ class Game:
         # how to handle blackjack? 
         # player blackjack payed out immediately if dealer cannot have blackjack
         # player blackjack pushes against dealer blackjack and wins against dealer 21 (with 3+ cards)
-        # player wiht blackjack can buy insurance
+        # player with blackjack can buy insurance
         # play each hand according to user input and valid ioptions, play while not bust or not 21
         # flag if dealer has to play hand or not
         

@@ -17,14 +17,9 @@ def config_game(session_data: dict):
         
         player_list.append(player)
 
-    
-    
     decks = session_data.shoe_size or 4
     penetration_level = session_data.penetration or "0.8"
     shoe = Shoe(decks=decks, penetration_level=penetration_level)
-
-
-
     hit_soft_17 = True if session_data.dealer_mode == "H17" else False
     dealer = Dealer(hit_soft_17, shoe=shoe)
 

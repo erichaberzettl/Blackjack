@@ -91,7 +91,7 @@ for i, player in enumerate(players):
 
     player_data = analysis["players_analysis"][i]
     with player:
-        st.markdown(f"Player {i} uses **{player_data["strategy"]}**, plays **{player_data["hands_played"]}** hand(s)\
+        st.markdown(f"Player {i} used **{player_data["strategy"]}**, played **{player_data["hands_played"]}** hand(s)\
                     with a bet of **{player_data["bet_size"]}** per round")
         st.markdown("### Metrics")
 
@@ -142,7 +142,7 @@ for i, player in enumerate(players):
         
         st.markdown("### Significance Tests")
         st.warning("Small p values can also be caused by extremely large sample sizes.")
-        st.warning("To ensure that samples are independent and in turn that the test is valid, use the 'Continuous' shuffle mode.")
+        st.warning("Due to the nature of the game, complete independence of the sample points is not given.")
         st.markdown("#### Fair game: Is the average return different from 0?")
 
         col1, col2 = st.columns(2)

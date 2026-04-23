@@ -51,6 +51,5 @@ def get_input(input_type:str, hand= None, player = None, dealer_upcard = None) -
             
             return action
 
-
 def output(message):
     print(message)
