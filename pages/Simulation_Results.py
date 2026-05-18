@@ -95,7 +95,7 @@ for i, player in enumerate(players):
                     with a bet of **{player_data["bet_size"]}** per round")
         st.markdown("### Metrics")
 
-        if st.sessions_state["static_graphs"]:
+        if st.session_state["static_graphs"]:
             st.metric("Final profit/loss", value=player_data["final_balance"])
         else:
             chart_data = player_data["profit_cumsum"]
