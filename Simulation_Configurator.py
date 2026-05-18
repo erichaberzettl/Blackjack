@@ -20,7 +20,7 @@ with st.container():
 
             
             st.markdown("Number of rounds")
-            rounds = st.slider(label=" ", min_value=1, max_value=1000000, value=100, key="rounds")
+            rounds = st.slider(label=" ", min_value=1, max_value=100000, value=100, key="rounds")
 
     if "players" not in st.session_state:
         st.session_state.players = {}

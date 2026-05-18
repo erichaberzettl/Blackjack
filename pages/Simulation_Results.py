@@ -66,13 +66,13 @@ st.download_button(
 
 tabs = [f"Player {i}" for i in range(st.session_state.player_no)]
 tabs.insert(0, "General")
-tabs.append("Data")
+tabs.append("Data Sample")
 
 general, *players, data = st.tabs(tabs)
 
 hands_df = pd.read_csv(f"data/hand_log_{st.session_state.id}.csv")
 with data:
-    st.dataframe(hands_df)
+    st.dataframe(hands_df.iloc[:100])
 
 with general:
     col1, col2, col3 = st.columns(3)
@@ -95,8 +95,12 @@ for i, player in enumerate(players):
                     with a bet of **{player_data["bet_size"]}** per round")
         st.markdown("### Metrics")
 
-        chart_data = player_data["profit_cumsum"]
-        st.metric("Final profit/loss", value=player_data["final_balance"], chart_data=chart_data, chart_type="line")
+        if st.sessions_state["static_graphs"]:
+            st.metric("Final profit/loss", value=player_data["final_balance"])
+        else:
+            chart_data = player_data["profit_cumsum"]
+            st.metric("Final profit/loss", value=player_data["final_balance"], chart_data=chart_data, chart_type="line")
+
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("Total hands played", value=player_data["total_hands"])
         col2.metric("Avg return per hand", value=round(player_data["mean_return"], 4))
