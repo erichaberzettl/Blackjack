@@ -24,5 +24,5 @@ def get_action(input_type:str, player=None, hand=None, dealer_upcard=None):
 
             return "H"
         
-def output(message):
+def no_output(message):
     pass

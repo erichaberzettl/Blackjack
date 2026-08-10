@@ -1,8 +1,7 @@
 import numpy as np
-import random, backend.strategies as strat, csv, uuid
+import random, csv, uuid
+from . import strategies as strat
 from pathlib import Path
-import sys
-import backend.manual_mode, backend.auto_mode
 
 class Card:
 
@@ -67,7 +66,11 @@ class Shoe:
         self.next_card_index = -1
         self.shuffles = 0
         self.rng.shuffle(self.cards)
-        
+
+    def shuffle(self):
+        self.rng.shuffle(self.cards)
+        self.next_card_index = 0
+        self.shuffles += 1
 
     def next_card(self):
         
@@ -77,10 +80,8 @@ class Shoe:
         self.next_card_index += 1
 
         if self.next_card_index/(52*self.decks) >= self.penetration_level:
-            self.rng.shuffle(self.cards)
-            self.next_card_index = 0
-            self.shuffles += 1
-
+            self.shuffle()
+            
         return self.cards[self.next_card_index]
     
 class Hand:
@@ -149,7 +150,7 @@ class Hand:
 
 class Player:
 
-    def __init__(self, id, hands_played = 1, strategy = strat.BASIC_STRAT, bet_size = 1, pay_insurance = False):
+    def __init__(self, id = 1, hands_played: int = 1, strategy = strat.BASIC_STRAT, bet_size: int = 1, pay_insurance = False):
         self.id = id
         self.strategy = strategy
         self.balance: float = 0
@@ -252,18 +253,18 @@ class Game:
         self.output_provider = output_provider
         self.hand_data = []
 
-    def play(self, export_data=True):
+    def play(self, export_hand_data=True, export_meta_data=True):
 
         with open(f"data/hand_log_{self.id}.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["round_id", "player_id", "dealer_upcard", "dealer_hand_value", "hand_start_value", "hand_final_value", "hand_result", "actions", "cards", "bet", "profit/loss"])
             writer.writeheader()
             for i in range(1, self.rounds+1):
                 self.play_round()
-                if export_data:
+                if export_hand_data:
                     self.write_hands(writer, self.hand_data, i)
                 self.hand_data = []
 
-        if export_data:
+        if export_meta_data:
             self.write_metadata_to_csv()
     
     def write_hands(self, writer, round_hands, round_index):

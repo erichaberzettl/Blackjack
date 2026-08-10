@@ -1,39 +1,11 @@
 import streamlit as st
-import backend
 import pandas as pd
 import time, os
-import backend.analysis2
+from backend import analysis2
 from zipfile import ZipFile
 from io import BytesIO
 import seaborn as sns
 import matplotlib.pyplot as plt
-sns.set_style("darkgrid")
-
-st.set_page_config("Simulation Results", "🂡", layout="wide")
-
-st.title("Blackjack Simulator")
-
-st.header(f"Simulation Results")
-
-
-st.write("Game ID:")
-try:
-    st.code(st.session_state.id, "Python")
-except AttributeError:
-    st.warning("Please run a valid simulation first!", icon="⚠️")
-    time.sleep(5)
-    st.switch_page("Simulation_Configurator.py")
-
-
-    
-try:
-    analysis = backend.analysis2.main(st.session_state.id)
-except FileNotFoundError:
-    st.warning("The entered Game ID does not exist. Please try again or configure a new simulation.", icon="⚠️")
-    st.stop()
-except Exception as e:
-    st.warning(f"There has been an error retrieving the data. Please try again. {e}", icon="⚠️")
-    st.stop()
 
 def create_zip():
     
@@ -45,7 +17,6 @@ def create_zip():
     ]
 
     zip_buffer = BytesIO()
-
     with ZipFile(zip_buffer, "w") as zipf:
         for file in file_list:
             if not os.path.exists(file):
@@ -56,13 +27,41 @@ def create_zip():
     zip_buffer.seek(0)
     return zip_buffer
 
-st.download_button(
-    label="Download Zip",
-    data=create_zip(),
-    file_name=f"data_{st.session_state.id}.zip",
-    mime="application/zip",
-    icon=":material/download:",
-)
+sns.set_style("darkgrid")
+st.set_page_config("Simulation Results", "🂡", layout="wide")
+st.title("Blackjack Simulator")
+st.header(f"Simulation Results")
+
+try:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("Game ID")
+        st.code(st.session_state.id, "Python")
+    with col2:
+        st.write("Export")
+        st.download_button(
+        label="Download Zip",
+        data=create_zip(),
+        file_name=f"data_{st.session_state.id}.zip",
+        mime="application/zip",
+        icon=":material/download:",
+        )
+
+except AttributeError:
+    st.warning("Please run a valid simulation first!", icon="⚠️")
+    time.sleep(5)
+    st.switch_page("Simulation_Configurator.py")
+
+try:
+    analysis = analysis2.main(st.session_state.id)
+except FileNotFoundError:
+    st.warning("The entered Game ID does not exist. Please try again or configure a new simulation.", icon="⚠️")
+    st.stop()
+except Exception as e:
+    st.warning(f"There has been an error retrieving the data. Please try again. {e}", icon="⚠️")
+    st.stop()
+
+
 
 tabs = [f"Player {i}" for i in range(st.session_state.player_no)]
 tabs.insert(0, "General")
@@ -75,11 +74,12 @@ with data:
     st.dataframe(hands_df.iloc[:100])
 
 with general:
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Total rounds", analysis["total_rounds"])
     col2.metric("Shuffles", analysis["total_shuffles"])
     col3.metric("Final dealer balance", analysis["dealer_balance"])
-
+    col4.metric("Average card amound per hand", f"{analysis['avg_card_amount']:.4f}")
+    col5.metric("Std average card amount", f"{analysis['std_avg_card_amount']:.4f}")
     if st.session_state["static_graphs"]:
         st.pyplot(analysis["static_balance_plot"])
     else:
@@ -103,8 +103,8 @@ for i, player in enumerate(players):
 
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("Total hands played", value=player_data["total_hands"])
-        col2.metric("Avg return per hand", value=round(player_data["mean_return"], 4))
-        col3.metric("Standard Deviation", value=round(player_data["std_pop"], 4))
+        col2.metric("Average return per hand", value=round(player_data["mean_return"], 4))
+        col3.metric("Std average return", value=round(player_data["std_pop"], 4))
         col4.metric("Win rate", value=round(player_data["win_rate_test"]["winrate"], 4))
         col5.metric("Number of splits", value=player_data["split_freq"])
 
@@ -131,9 +131,9 @@ for i, player in enumerate(players):
             cols[4].metric("Number of pushes", value=0)
 
         col1, col2, col3 = st.columns(3)
-        col1.markdown("**Most successful starting hand (wins)**")
+        col1.markdown("**Most successful starting hands (wins)**")
         col1.write(player_data["winner_start_hands"])
-        col2.markdown("**Worst starting hand (losses)**")
+        col2.markdown("**Worst starting hands (losses)**")
         col2.write(player_data["loser_start_hands"])
         col3.markdown("**Most pushed hands (by final hand value)**")
         col3.write(player_data["push_final_hands"])

@@ -6,11 +6,11 @@ from zipfile import ZipFile
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-st.set_page_config("Simulation Results", "🂡", layout="wide")
+st.set_page_config("Prediction Model", "🂡", layout="wide")
 
 st.title("Blackjack Simulator")
 
-st.header(f"Prediction model")
+st.header("Prediction model")
 
 model_3 = joblib.load("backend/model_3_log_reg.pkl")
 X_cols = ["dealer_upcard", "hand_start_value", "is_soft", "dealer_ace", "is_blackjack"]
@@ -25,7 +25,7 @@ def predict_win_probability():
     
     return model_3.predict_proba(data_df)[0]
 
-with st.form("prediction_input", clear_on_submit=True, enter_to_submit=True):
+with st.form("prediction_input", clear_on_submit=False, enter_to_submit=True):
     st.write("Predict the win/loss probability for a specific setup with Logistic Regression")
     col1, col2 = st.columns(2)
     col1.number_input(label="Dealer upcard value (1 is Ace)", min_value=1, max_value=10, key="dealer_upcard")
@@ -40,6 +40,8 @@ with st.form("prediction_input", clear_on_submit=True, enter_to_submit=True):
     coefficients = model_3.coef_
     intercept = model_3.intercept_
     if submitted:
+
+        st.markdown("### Results")
         result = predict_win_probability()
     
         col1, col2, col3 = st.columns(3)

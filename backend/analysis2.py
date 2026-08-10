@@ -21,20 +21,25 @@ def main(game_id: str = "8af4bbcc-2f3f-11f1-90ac-d2dcc4e548ff"):
     players_df = pd.read_csv(f"data/player_log_{game_id}.csv")
     game_df = pd.read_csv(f"data/game_log_{game_id}.csv")
 
-    total_analysis = {}
-    total_analysis["total_rounds"] = game_df.loc[0, "rounds"]
-    total_analysis["total_shuffles"] = game_df.loc[0, "shuffles"]
-    total_analysis["dealer_balance"] = game_df.loc[0, "dealer_balance"]
-    total_analysis["balance_plot"] = get_balance_plot_data()
-    total_analysis["static_balance_plot"] = create_static_balance_plot(total_analysis["balance_plot"])
+    general_analysis = {}
+    general_analysis["total_rounds"] = game_df.loc[0, "rounds"]
+    general_analysis["total_shuffles"] = game_df.loc[0, "shuffles"]
+    general_analysis["dealer_balance"] = game_df.loc[0, "dealer_balance"]
+
+    cards_per_hand = hands_df["cards"].str.count(",") + 2
+    general_analysis["avg_card_amount"] = cards_per_hand.mean()
+    general_analysis["std_avg_card_amount"] = cards_per_hand.std(ddof=0)
+
+    general_analysis["balance_plot"] = get_balance_plot_data()
+    general_analysis["static_balance_plot"] = create_static_balance_plot(general_analysis["balance_plot"])
 
     players_analysis = {}
     for i in hands_df["player_id"].unique():
         players_analysis[int(i)] = analyze_player(int(i))
 
-    total_analysis["players_analysis"] = players_analysis
+    general_analysis["players_analysis"] = players_analysis
 
-    return total_analysis
+    return general_analysis
 
 def get_balance_plot_data():
 
@@ -144,6 +149,10 @@ def analyze_player(id):
     
     analysis["mean_return_test"] = ttest_mean_return(player_hands_df)
     analysis["win_rate_test"] = proptest_win_rate(player_hands_df)
+
+    cards_per_hand = player_hands_df["cards"].str.count(",")
+    analysis["avg_card_amount"] = cards_per_hand.mean()
+    analysis["std_avg_card_amount"] = cards_per_hand.std(ddof=0)
 
     return analysis
 

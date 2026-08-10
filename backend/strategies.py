@@ -1,3 +1,36 @@
+def match_player_strat(strategy: str):
+
+    match strategy:
+            case "Basic Strategy":
+                return BASIC_STRAT
+            case "No Bust Strategy":
+                return NO_BUST_STRAT
+            case "Dealer Mimic S17 Strategy":
+                return DEALER_MIMIC_S17_STRAT
+            case "Dealer Mimic H17 Strategy":
+                return DEALER_MIMIC_H17_STRAT
+            case "Always Split Strategy":
+                return ALWAYS_SPLIT_STRAT
+            case _:
+                return BASIC_STRAT
+        
+STRATEGY_NAMES_LIST = ["Basic Strategy",
+                        "Always Split Strategy",
+                        "Dealer Mimic S17 Strategy",
+                        "Dealer Mimic H17 Strategy",
+                        "No Bust Strategy"]
+
+PILOT_RUN_METRICS = {'Basic Strategy': {'mean': -0.00030782191692048475, 'var': 1.2696201378984435}, 
+ 'Always Split Strategy': {'mean': -0.05813530237637148, 'var': 1.241387625488063}, 
+ 'Dealer Mimic S17 Strategy': {'mean': -0.05926666666666667, 'var': 0.9519025256397089}, 
+ 'Dealer Mimic H17 Strategy': {'mean': -0.0516, 'var': 0.9553359511985341}, 
+ 'No Bust Strategy': {'mean': -0.06065700982928091, 'var': 0.9908237931112909}, 
+ 'Basic Strategy Insurance': {'mean': -0.0003723852082119034, 'var': 1.2604269847985508}, 
+ 'Always Split Strategy Insurance': {'mean': -0.05247768145943848, 'var': 1.2427045663493113}, 
+ 'Dealer Mimic S17 Strategy Insurance': {'mean': -0.05223333333333333, 'var': 0.954436826782907}, 
+ 'Dealer Mimic H17 Strategy Insurance': {'mean': -0.05221666666666667, 'var': 0.9520134868385479}, 
+ 'No Bust Strategy Insurance': {'mean': -0.059497233815393576, 'var': 0.9975276493791932}}
+
 
 BASIC_STRAT = {
 
